@@ -84,8 +84,8 @@ export default function Landing() {
     const fetchData = async () => {
       try {
         const [catRes, tutorRes] = await Promise.all([
-          API.get('/api/categories'),
-          API.get('/api/tutors', { params: { sort: 'rating', limit: 4 } }),
+          API.get('/categories'),
+          API.get('/tutors', { params: { sort: 'rating', limit: 4 } }),
         ])
         if (catRes.data?.length) setCategories(catRes.data)
         if (tutorRes.data?.length) setFeaturedTutors(tutorRes.data)
