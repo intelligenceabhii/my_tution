@@ -29,6 +29,7 @@ export default function Navbar() {
         <div className="hidden md:flex items-center gap-1 text-sm">
           <Link to="/find-tutors" className="px-4 py-2 rounded-xl text-gray-600 hover:text-primary hover:bg-primary/5 transition-all font-medium">Find Tutors</Link>
           <Link to="/subjects" className="px-4 py-2 rounded-xl text-gray-600 hover:text-primary hover:bg-primary/5 transition-all font-medium">Subjects</Link>
+          <Link to="/about-us" className="px-4 py-2 rounded-xl text-gray-600 hover:text-primary hover:bg-primary/5 transition-all font-medium">About Us</Link>
           {!user ? (
             <>
               <Link to="/login" className="px-4 py-2 rounded-xl text-gray-600 hover:text-primary hover:bg-primary/5 transition-all font-medium">Login</Link>
@@ -111,6 +112,7 @@ export default function Navbar() {
         <div className="md:hidden bg-white border-t border-gray-100 px-4 py-4 space-y-1 text-sm animate-fade-in shadow-lg">
           <Link to="/find-tutors" onClick={() => setMenuOpen(false)} className="block px-4 py-3 rounded-xl text-gray-700 hover:bg-primary/5 transition font-medium">Find Tutors</Link>
           <Link to="/subjects" onClick={() => setMenuOpen(false)} className="block px-4 py-3 rounded-xl text-gray-700 hover:bg-primary/5 transition font-medium">Subjects</Link>
+          <Link to="/about-us" onClick={() => setMenuOpen(false)} className="block px-4 py-3 rounded-xl text-gray-700 hover:bg-primary/5 transition font-medium">About Us</Link>
           {!user ? (
             <>
               <Link to="/login" onClick={() => setMenuOpen(false)} className="block px-4 py-3 rounded-xl text-gray-700 hover:bg-primary/5 transition font-medium">Login</Link>

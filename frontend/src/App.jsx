@@ -13,6 +13,12 @@ import AdminDashboard from './pages/AdminDashboard'
 import AIMatch from './pages/AIMatch'
 import FindTutors from './pages/FindTutors'
 import Subjects from './pages/Subjects'
+import AboutUs from './pages/AboutUs'
+import Contact from './pages/Contact'
+import Support from './pages/Support'
+import Terms from './pages/Terms'
+import Privacy from './pages/Privacy'
+import Refund from './pages/Refund'
 import Favorites from './pages/Favorites'
 import Messages from './pages/Messages'
 
@@ -59,6 +65,12 @@ function AppRoutes() {
           <Route path="/subjects" element={<Subjects />} />
           <Route path="/favorites" element={<ProtectedRoute roles={['parent', 'tutor']}><Favorites /></ProtectedRoute>} />
           <Route path="/messages" element={<ProtectedRoute roles={['parent', 'tutor']}><Messages /></ProtectedRoute>} />
+          <Route path="/about-us" element={<AboutUs />} />
+          <Route path="/contact" element={<Contact />} />
+          <Route path="/support" element={<Support />} />
+          <Route path="/terms" element={<Terms />} />
+          <Route path="/privacy" element={<Privacy />} />
+          <Route path="/refund" element={<Refund />} />
         </Routes>
       </main>
       <Footer />

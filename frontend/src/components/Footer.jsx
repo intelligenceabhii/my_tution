@@ -33,9 +33,14 @@ export default function Footer() {
               Empowering education in Jharkhand — connecting parents with the best verified tutors for Nursery to Class 12 & beyond.
             </p>
             <div className="flex items-center gap-3">
-              {['linkedin', 'twitter', 'instagram', 'youtube'].map((s) => (
-                <a key={s} href="#" className="w-9 h-9 rounded-xl bg-white/5 hover:bg-white/15 flex items-center justify-center transition-all duration-300 hover:scale-110 text-blue-300 hover:text-gold">
-                  <SocialIcon type={s} />
+              {[
+                { type: 'linkedin', href: '#' },
+                { type: 'twitter', href: '#' },
+                { type: 'instagram', href: 'https://www.instagram.com/merit_yard/' },
+                { type: 'youtube', href: 'https://www.youtube.com/@merit_yard' },
+              ].map((s) => (
+                <a key={s.type} href={s.href} target="_blank" rel="noopener noreferrer" className="w-9 h-9 rounded-xl bg-white/5 hover:bg-white/15 flex items-center justify-center transition-all duration-300 hover:scale-110 text-blue-300 hover:text-gold">
+                  <SocialIcon type={s.type} />
                 </a>
               ))}
             </div>
@@ -85,13 +90,13 @@ export default function Footer() {
               <svg className="w-4 h-4 text-gold/60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
               </svg>
-              <span>+91 98765 43210</span>
+              <span>+91 79790 37065</span>
             </div>
             <div className="flex items-center gap-2">
               <svg className="w-4 h-4 text-gold/60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
               </svg>
-              <span>support@mytuition.in</span>
+              <span>abhii.intelligence@gmail.com</span>
             </div>
             <div className="flex items-center gap-2">
               <svg className="w-4 h-4 text-gold/60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
