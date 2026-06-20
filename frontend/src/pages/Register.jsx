@@ -24,9 +24,9 @@ export default function Register() {
 
   return (
     <div className="min-h-[90vh] flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-blue-50 relative overflow-hidden px-4 py-8">
-      <div className="absolute inset-0">
-        <div className="absolute top-40 left-40 w-80 h-80 bg-gold/10 rounded-full blur-3xl" />
-        <div className="absolute bottom-40 right-40 w-72 h-72 bg-primary/5 rounded-full blur-3xl" />
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute -top-20 -left-20 w-[400px] h-[400px] bg-gradient-to-br from-primary/[0.03] to-transparent rounded-full blur-3xl" />
+        <div className="absolute -bottom-20 -right-20 w-[400px] h-[400px] bg-gradient-to-tl from-gold/[0.03] to-transparent rounded-full blur-3xl" />
       </div>
       <div className="relative w-full max-w-md animate-slide-up">
         <div className="text-center mb-8">

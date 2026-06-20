@@ -1,9 +1,11 @@
 import json
 from sqlalchemy.orm import Session
 from ..models import TutorProfile, ParentRequirement, AIMatchLog
-from .gemini_client import generate_content
+from .gemini_client import generate_content, is_match_enabled, get_match_prompt_template
 
 def run_ai_match(requirement_id: int, db: Session) -> dict:
+    if not is_match_enabled():
+        return {"requirement_id": requirement_id, "matches": [], "message": "AI matching is disabled by admin"}
     req = db.query(ParentRequirement).filter(ParentRequirement.id == requirement_id).first()
     if not req:
         raise ValueError("Requirement not found")
@@ -32,15 +34,28 @@ def run_ai_match(requirement_id: int, db: Session) -> dict:
             "rating": t.rating,
         })
 
-    system_prompt = (
-        "You are an expert education consultant for Jharkhand, India. "
-        "You help parents find the best home tutors for their children. "
-        "Consider: subject match, class level, area proximity, fee fit, "
-        "teaching mode preference, board expertise (JAC/CBSE/ICSE), "
-        "tutor experience and rating. Respond ONLY in JSON."
-    )
+    custom_template = get_match_prompt_template()
 
-    user_prompt = f"""
+    if custom_template:
+        full_prompt = custom_template.format(
+            req_child_class=req.child_class,
+            req_subjects_needed=req.subjects_needed,
+            req_board=req.board,
+            req_location_area=req.location_area or 'Any',
+            req_budget=req.budget_per_month or 'Negotiable',
+            req_teaching_mode=req.teaching_mode,
+            tutors_json=json.dumps(tutors_json, indent=2, default=str),
+        )
+    else:
+        system_prompt = (
+            "You are an expert education consultant for Jharkhand, India. "
+            "You help parents find the best home tutors for their children. "
+            "Consider: subject match, class level, area proximity, fee fit, "
+            "teaching mode preference, board expertise (JAC/CBSE/ICSE), "
+            "tutor experience and rating. Respond ONLY in JSON."
+        )
+
+        user_prompt = f"""
 Parent Requirement:
  - Child Class: {req.child_class}
  - Subjects: {req.subjects_needed}
@@ -64,7 +79,8 @@ Task: Rank the top 3 tutors. For each return:
 Return ONLY a JSON array, no other text.
 """
 
-    full_prompt = f"{system_prompt}\n\n{user_prompt}"
+    if not custom_template:
+        full_prompt = f"{system_prompt}\n\n{user_prompt}"
     raw_response = generate_content(full_prompt)
 
     cleaned = raw_response.strip()

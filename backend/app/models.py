@@ -136,6 +136,21 @@ class SubjectCategoryModel(Base):
     icon = Column(String, nullable=False)
     subjects = Column(JSON, nullable=False)
 
+class AIConfig(Base):
+    __tablename__ = "ai_config"
+
+    id = Column(Integer, primary_key=True, index=True)
+    gemini_api_key = Column(String, default="")
+    model_name = Column(String, default="gemini-2.0-flash")
+    temperature = Column(Float, default=0.7)
+    max_tokens = Column(Integer, default=2048)
+    top_p = Column(Float, default=0.95)
+    match_enabled = Column(Boolean, default=True)
+    summarize_enabled = Column(Boolean, default=True)
+    match_prompt_template = Column(Text, default="")
+    summarize_prompt_template = Column(Text, default="")
+    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+
 class Report(Base):
     __tablename__ = "reports"
     id = Column(Integer, primary_key=True, index=True)

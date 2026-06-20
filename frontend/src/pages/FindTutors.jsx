@@ -227,6 +227,7 @@ export default function FindTutors() {
       if (filters.min_fee) params.min_fee = filters.min_fee
       if (filters.max_fee) params.max_fee = filters.max_fee
       if (filters.min_rating) params.min_rating = filters.min_rating
+      if (filters.experience) params.min_experience = filters.experience
       if (filters.sort) params.sort = filters.sort
       params.skip = reset ? 0 : skip
       params.limit = limit
@@ -249,7 +250,7 @@ export default function FindTutors() {
     setSkip(0); setTutors([]); setTotal(0)
     const timer = setTimeout(() => fetchTutors(true), 300)
     return () => clearTimeout(timer)
-  }, [filters.search, filters.subject, filters.board, filters.teaching_mode, filters.area, filters.min_fee, filters.max_fee, filters.min_rating, filters.sort])
+  }, [filters.search, filters.subject, filters.board, filters.teaching_mode, filters.area, filters.min_fee, filters.max_fee, filters.min_rating, filters.sort, filters.experience])
 
   useEffect(() => {
     if (tutors.length > 0 && user) {
@@ -264,7 +265,7 @@ export default function FindTutors() {
 
   const loadMore = () => { if (loadingMore) return; setLoadingMore(true); fetchTutors(false) }
   const clearFilters = () => {
-    setFilters({ search: '', subject: '', board: '', teaching_mode: '', area: '', min_fee: '', max_fee: '', min_rating: 0, sort: 'rating' })
+    setFilters({ search: '', subject: '', board: '', teaching_mode: '', area: '', min_fee: '', max_fee: '', min_rating: 0, sort: 'rating', experience: '' })
     setSubjectSearch('')
   }
   const updateFilter = (key, value) => { setFilters((prev) => ({ ...prev, [key]: value })); setSidebarOpen(false) }
@@ -283,7 +284,18 @@ export default function FindTutors() {
   const avgFee = tutorsWithFee.length ? Math.round(tutorsWithFee.reduce((s, t) => s + (t.fee_per_hour || t.expected_fee || 0), 0) / tutorsWithFee.length) : 0
   const avgRating = tutors.length ? (tutors.reduce((s, t) => s + (t.rating || 0), 0) / tutors.length).toFixed(1) : '0.0'
 
-  const sortOptions = [
+  const languages = [
+  'English', 'Hindi', 'Bengali', 'Tamil', 'Telugu', 'Kannada', 'Malayalam', 'Odia', 'Assamese', 'Punjabi',
+]
+
+const blogs = [
+  { title: '10 Signs Your Child Needs a Tutor', date: '2 days ago', tag: 'Parenting' },
+  { title: 'Board Exams to Entrance Prep: A Guide', date: '1 week ago', tag: 'Exams' },
+  { title: 'Why Students Lose Interest in Studies', date: '2 weeks ago', tag: 'Learning' },
+  { title: 'Are Online Classes Safe for Students?', date: '3 weeks ago', tag: 'Safety' },
+]
+
+const sortOptions = [
     { value: 'rating', label: 'Top Rated' },
     { value: 'fee_asc', label: 'Fee: Low to High' },
     { value: 'fee_desc', label: 'Fee: High to Low' },
@@ -294,8 +306,17 @@ export default function FindTutors() {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 md:py-8 animate-fade-in">
       <div className="mb-6">
-        <h1 className="text-2xl md:text-4xl font-extrabold text-primary">Find the Perfect Tutor</h1>
-        <p className="text-gray-500 mt-1 md:mt-2 text-sm md:text-base">Browse through our verified tutors</p>
+        <div className="flex items-center gap-2 mb-2">
+          <h1 className="text-2xl md:text-4xl font-extrabold text-primary">Find the Perfect Tutor</h1>
+        </div>
+        <p className="text-gray-500 text-sm md:text-base">Browse through our verified tutors</p>
+        <div className="flex flex-wrap items-center gap-2 mt-3">
+          <span className="text-xs text-gray-400 font-medium">Search in:</span>
+          {languages.slice(0, 4).map((lang) => (
+            <span key={lang} className="text-xs bg-gray-100 text-gray-600 px-2.5 py-1 rounded-full border border-gray-200">{lang}</span>
+          ))}
+          <span className="text-xs text-gray-400">+{languages.length - 4} more</span>
+        </div>
       </div>
 
       <button onClick={() => setSidebarOpen(!sidebarOpen)} className="lg:hidden flex items-center gap-2 bg-gradient-to-r from-primary to-primary-light text-white px-4 py-2.5 rounded-xl text-sm font-semibold mb-4 hover:shadow-lg transition">
@@ -369,6 +390,17 @@ export default function FindTutors() {
             </div>
 
             <div>
+              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Experience (Years)</label>
+              <select value={filters.experience || ''} onChange={(e) => setFilters((prev) => ({ ...prev, experience: e.target.value }))} className="input-field text-sm py-2.5 cursor-pointer">
+                <option value="">Any Experience</option>
+                <option value="1">1+ year</option>
+                <option value="3">3+ years</option>
+                <option value="5">5+ years</option>
+                <option value="10">10+ years</option>
+              </select>
+            </div>
+
+            <div>
               <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Min Rating</label>
               <StarRating interactive onClick={(val) => updateFilter('min_rating', val)} currentFilter={filters.min_rating} size="lg" />
             </div>
@@ -397,6 +429,27 @@ export default function FindTutors() {
                 <span>{avgRating} avg rating</span>
               </div>
             </>
+          )}
+
+          {!loading && tutors.length > 0 && (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+              <div className="bg-white rounded-xl border border-gray-100 px-4 py-3 text-center">
+                <div className="text-primary font-extrabold text-lg">{total}</div>
+                <div className="text-gray-500 text-xs font-medium">Total Tutors</div>
+              </div>
+              <div className="bg-white rounded-xl border border-gray-100 px-4 py-3 text-center">
+                <div className="text-green-600 font-extrabold text-lg">{verifiedCount}</div>
+                <div className="text-gray-500 text-xs font-medium">Verified</div>
+              </div>
+              <div className="bg-white rounded-xl border border-gray-100 px-4 py-3 text-center">
+                <div className="text-primary font-extrabold text-lg">₹{avgFee}</div>
+                <div className="text-gray-500 text-xs font-medium">Avg Fee/mo</div>
+              </div>
+              <div className="bg-white rounded-xl border border-gray-100 px-4 py-3 text-center">
+                <div className="text-gold-dark font-extrabold text-lg">{avgRating}</div>
+                <div className="text-gray-500 text-xs font-medium">Avg Rating</div>
+              </div>
+            </div>
           )}
 
           {loading && tutors.length === 0 && (
@@ -440,6 +493,30 @@ export default function FindTutors() {
                   </button>
                 </div>
               )}
+
+              {/* Blog sidebar */}
+              <div className="mt-10 bg-white rounded-2xl premium-shadow border border-gray-100 p-6">
+                <div className="flex items-center justify-between mb-5">
+                  <h3 className="font-bold text-primary text-lg">Today's Blogs</h3>
+                  <a href="#" className="text-sm text-primary font-medium hover:underline">Show more →</a>
+                </div>
+                <div className="space-y-4">
+                  {blogs.map((blog, idx) => (
+                    <div key={idx} className="flex items-start gap-3 group cursor-pointer">
+                      <div className="w-10 h-10 rounded-xl bg-primary/5 text-primary flex items-center justify-center text-sm font-bold shrink-0 group-hover:bg-primary group-hover:text-white transition-colors">
+                        {blog.title.charAt(0)}
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-gray-800 group-hover:text-primary transition-colors line-clamp-2">{blog.title}</p>
+                        <div className="flex items-center gap-2 mt-1">
+                          <span className="text-xs bg-primary/5 text-primary px-2 py-0.5 rounded-full font-medium">{blog.tag}</span>
+                          <span className="text-xs text-gray-400">{blog.date}</span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </>
           )}
         </div>

@@ -2,8 +2,8 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy.orm import Session, joinedload
 from ..database import get_db
-from ..models import User, TutorProfile, ParentRequirement, TutorApplication, Review, SubjectCategoryModel
-from ..schemas import AdminStats, TutorApprovalResponse, UserAdminResponse, AdminApplicationResponse, ApplicationStatusUpdate, AdminRequirementResponse, AdminReviewResponse, SubjectCategory, CategoryCreate, CategoryUpdate
+from ..models import User, TutorProfile, ParentRequirement, TutorApplication, Review, SubjectCategoryModel, AIConfig
+from ..schemas import AdminStats, TutorApprovalResponse, UserAdminResponse, AdminApplicationResponse, ApplicationStatusUpdate, AdminRequirementResponse, AdminReviewResponse, SubjectCategory, CategoryCreate, CategoryUpdate, AIConfigResponse, AIConfigUpdate
 from ..auth import hash_password
 from ..dependencies import get_current_user, admin_only
 
@@ -317,3 +317,56 @@ def delete_category(
     db.delete(db_cat)
     db.commit()
     return {"message": "Category deleted"}
+
+def get_or_create_ai_config(db: Session) -> AIConfig:
+    config = db.query(AIConfig).first()
+    if not config:
+        config = AIConfig()
+        db.add(config)
+        db.commit()
+        db.refresh(config)
+    return config
+
+@router.get("/ai-config", response_model=AIConfigResponse)
+def get_ai_config(
+    db: Session = Depends(get_db),
+    _=Depends(admin_only),
+):
+    return get_or_create_ai_config(db)
+
+@router.put("/ai-config", response_model=AIConfigResponse)
+def update_ai_config(
+    update: AIConfigUpdate,
+    db: Session = Depends(get_db),
+    _=Depends(admin_only),
+):
+    config = get_or_create_ai_config(db)
+    update_data = update.model_dump(exclude_unset=True)
+    for key, value in update_data.items():
+        setattr(config, key, value)
+    db.commit()
+    db.refresh(config)
+    return config
+
+@router.post("/ai-config/test")
+def test_ai_config(
+    db: Session = Depends(get_db),
+    _=Depends(admin_only),
+):
+    config = get_or_create_ai_config(db)
+    api_key = config.gemini_api_key
+    if not api_key:
+        import os
+        api_key = os.getenv("GEMINI_API_KEY", "")
+    if not api_key:
+        raise HTTPException(status_code=400, detail="No API key configured. Set it in .env or via AI Settings.")
+    try:
+        from google import genai
+        client = genai.Client(api_key=api_key)
+        response = client.models.generate_content(
+            model=config.model_name or "gemini-2.0-flash",
+            contents="Respond with just: OK",
+        )
+        return {"status": "success", "message": response.text.strip()}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"AI connection failed: {str(e)}")

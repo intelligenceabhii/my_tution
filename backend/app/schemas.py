@@ -238,6 +238,33 @@ class CategoryUpdate(BaseModel):
     subjects: Optional[List[str]] = None
 
 
+class AIConfigResponse(BaseModel):
+    id: int
+    gemini_api_key: str = ""
+    model_name: str = "gemini-2.0-flash"
+    temperature: float = 0.7
+    max_tokens: int = 2048
+    top_p: float = 0.95
+    match_enabled: bool = True
+    summarize_enabled: bool = True
+    match_prompt_template: str = ""
+    summarize_prompt_template: str = ""
+    updated_at: Optional[datetime] = None
+
+    class Config:
+        from_attributes = True
+
+class AIConfigUpdate(BaseModel):
+    gemini_api_key: Optional[str] = None
+    model_name: Optional[str] = None
+    temperature: Optional[float] = None
+    max_tokens: Optional[int] = None
+    top_p: Optional[float] = None
+    match_enabled: Optional[bool] = None
+    summarize_enabled: Optional[bool] = None
+    match_prompt_template: Optional[str] = None
+    summarize_prompt_template: Optional[str] = None
+
 # --- Admin Schemas ---
 
 class AdminStats(BaseModel):
