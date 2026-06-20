@@ -1,13 +1,23 @@
 import { useState } from 'react'
+import API from '../api/axios'
 
 export default function Contact() {
   const [form, setForm] = useState({ name: '', email: '', subject: '', message: '' })
   const [sent, setSent] = useState(false)
+  const [sending, setSending] = useState(false)
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
-    setSent(true)
-    setForm({ name: '', email: '', subject: '', message: '' })
+    setSending(true)
+    try {
+      await API.post('/contact', form)
+      setSent(true)
+      setForm({ name: '', email: '', subject: '', message: '' })
+    } catch {
+      alert('Failed to send message. Please try again.')
+    } finally {
+      setSending(false)
+    }
   }
 
   return (
@@ -55,7 +65,7 @@ export default function Contact() {
                   <label className="block text-sm font-medium text-gray-700 mb-1.5">Message</label>
                   <textarea rows={5} value={form.message} onChange={(e) => setForm({ ...form, message: e.target.value })} required className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition bg-gray-50/50 resize-none" placeholder="Tell us more..." />
                 </div>
-                <button type="submit" className="w-full bg-gradient-to-r from-primary to-primary-light text-white py-3.5 rounded-xl font-bold hover:shadow-lg hover:scale-[1.01] transition-all">Send Message</button>
+                <button type="submit" disabled={sending} className="w-full bg-gradient-to-r from-primary to-primary-light text-white py-3.5 rounded-xl font-bold hover:shadow-lg hover:scale-[1.01] transition-all disabled:opacity-60 disabled:cursor-not-allowed">{sending ? 'Sending...' : 'Send Message'}</button>
               </form>
             )}
           </div>

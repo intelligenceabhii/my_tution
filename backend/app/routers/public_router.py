@@ -2,10 +2,12 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import func
 from typing import Optional
+from pydantic import BaseModel
 from ..database import get_db
 from ..models import User, TutorProfile, Favorite, Message, Review, Report, SubjectCategoryModel
 from ..schemas import TutorBrowseResponse, FavoriteResponse, MessageCreate, MessageResponse, ReportCreate, SubjectCategory
 from ..dependencies import get_current_user
+from ..utils.email import send_contact_email
 
 router = APIRouter()
 
@@ -247,3 +249,16 @@ def report_tutor(
     db.add(r)
     db.commit()
     return {"message": "Report submitted"}
+
+class ContactForm(BaseModel):
+    name: str
+    email: str
+    subject: str
+    message: str
+
+@router.post("/contact")
+def contact_form(form: ContactForm):
+    sent = send_contact_email(form.name, form.email, form.subject, form.message)
+    if sent:
+        return {"message": "Message sent successfully"}
+    return {"message": "Message received (email delivery not configured)"}
