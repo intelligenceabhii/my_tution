@@ -202,7 +202,7 @@ export default function Subjects() {
             <div>
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-xl font-bold text-primary">
-                  Results for "<span className="text-myai">{searchQuery}</span>"
+                  Results for "<span className="text-meritai">{searchQuery}</span>"
                 </h2>
                 <span className="text-sm text-gray-500 bg-white px-3 py-1.5 rounded-lg border border-gray-200">
                   {filteredSubjects.length} found

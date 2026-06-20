@@ -1,12 +1,26 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import func, desc
+from typing import Optional
 from ..database import get_db
 from ..models import User, TutorProfile, Conversation, Message
 from ..schemas import ConversationCreate, MessageCreate, MessageResponse
 from ..dependencies import get_current_user
 
 router = APIRouter()
+
+@router.get("/users/search")
+def search_users(
+    q: str = Query("", min_length=1),
+    limit: int = Query(10, ge=1, le=20),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    users = db.query(User).filter(
+        User.email.ilike(f"%{q}%"),
+        User.id != current_user.id,
+    ).limit(limit).all()
+    return [{"id": u.id, "email": u.email, "role": u.role} for u in users]
 
 @router.get("/conversations")
 def list_conversations(
@@ -85,22 +99,19 @@ def get_messages(
 
     msgs = db.query(Message).filter(Message.conversation_id == conversation_id).options(
         joinedload(Message.sender),
+        joinedload(Message.receiver),
     ).order_by(Message.created_at.asc()).all()
 
-    result = []
-    for m in msgs:
-        other = m.sender if m.receiver_id == current_user.id else m.receiver
-        result.append(MessageResponse(
-            id=m.id,
-            conversation_id=m.conversation_id,
-            sender_id=m.sender_id,
-            receiver_id=m.receiver_id,
-            message=m.message,
-            is_read=m.is_read,
-            created_at=m.created_at,
-            sender_name=other.email.split("@")[0] if other else "Unknown",
-        ))
-    return result
+    return [MessageResponse(
+        id=m.id,
+        conversation_id=m.conversation_id,
+        sender_id=m.sender_id,
+        receiver_id=m.receiver_id,
+        message=m.message,
+        is_read=m.is_read,
+        created_at=m.created_at,
+        sender_name=m.sender.email.split("@")[0] if m.sender else "Unknown",
+    ) for m in msgs]
 
 @router.post("/conversations/{conversation_id}/messages")
 def send_message(

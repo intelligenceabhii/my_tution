@@ -73,7 +73,7 @@ export default function Messages() {
       setMessages((prev) => [...prev, res.data])
       setNewMsg('')
       fetchConversations()
-    } catch { alert('Failed to send') }
+    } catch (err) { alert(err.response?.data?.detail || 'Failed to send') }
     finally { setSending(false) }
   }
 
@@ -81,11 +81,8 @@ export default function Messages() {
     if (!q.trim()) { setSearchResults([]); return }
     setSearching(true)
     try {
-      const res = await API.get(`/admin/users`)  // fallback: just list
-      const filtered = (res.data || []).filter((u) =>
-        u.id !== user.id && u.email.toLowerCase().includes(q.toLowerCase())
-      )
-      setSearchResults(filtered.slice(0, 10))
+      const res = await API.get(`/users/search?q=${encodeURIComponent(q)}`)
+      setSearchResults(res.data || [])
     } catch { setSearchResults([]) }
     finally { setSearching(false) }
   }
@@ -93,8 +90,17 @@ export default function Messages() {
   const startConversation = async (receiverId) => {
     setComposing(true)
     try {
+      let id = receiverId
+      if (!id && composeEmail.trim()) {
+        const search = await API.get(`/users/search?q=${encodeURIComponent(composeEmail.trim())}`)
+        if (search.data && search.data.length > 0) {
+          id = search.data[0].id
+        } else {
+          throw new Error('User not found')
+        }
+      }
       const res = await API.post('/conversations', {
-        receiver_id: receiverId,
+        receiver_id: id,
         subject: composeSubject || undefined,
       })
       setShowCompose(false)
@@ -110,7 +116,7 @@ export default function Messages() {
           setComposeMessage('')
         }
       }
-    } catch { alert('Failed to start conversation') }
+    } catch (err) { alert(err.response?.data?.detail || 'Failed to start conversation') }
     finally { setComposing(false) }
   }
 

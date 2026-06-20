@@ -11,15 +11,15 @@ const stats = [
 
 const howItWorks = [
   { step: '01', title: 'Register & Set Your Goals', desc: 'Sign up in under 60 seconds. Tell us what your child needs to learn, their class, and preferences.', icon: 'edit' },
-  { step: '02', title: 'Get AI Matched', desc: 'Our smart MyAI engine finds the best tutors matching your child\'s learning style, budget, and goals.', icon: 'sparkles' },
+  { step: '02', title: 'Get MeritAI Matched', desc: 'Our smart MeritAI engine finds the best tutors matching your child\'s learning style, budget, and goals.', icon: 'sparkles' },
   { step: '03', title: 'Start Learning', desc: 'Review profiles, book a free demo, and start 1-on-1 learning with your perfect tutor.', icon: 'play' },
 ]
 
 const myAIFeatures = [
-  { title: 'Smart Tutor Matching', desc: 'MyAI analyzes your child\'s requirements, learning style, and goals to recommend the top 3 perfect tutors.', metric: '98%', metricLabel: 'Match Accuracy', icon: 'brain' },
+  { title: 'Smart Tutor Matching', desc: 'MeritAI analyzes your child\'s requirements, learning style, and goals to recommend the top 3 perfect tutors.', metric: '98%', metricLabel: 'Match Accuracy', icon: 'brain' },
   { title: 'Instant Session Insights', desc: 'Automated recaps with key takeaways and focused review points after every session.', metric: '3x', metricLabel: 'Faster Review', icon: 'insight' },
-  { title: 'Predictive Progress Tracking', desc: 'AI-powered predictions on exam readiness with adaptive practice quizzes aligned to JAC, CBSE & ICSE.', metric: '96%', metricLabel: 'Prediction Accuracy', icon: 'chart' },
-  { title: 'Real-time Doubt Resolution', desc: 'Ask any question anytime and get instant, contextual answers powered by MyAI — learning never stops.', metric: '24/7', metricLabel: 'Available', icon: 'help' },
+  { title: 'Predictive Progress Tracking', desc: 'MeritAI-powered predictions on exam readiness with adaptive practice quizzes aligned to JAC, CBSE & ICSE.', metric: '96%', metricLabel: 'Prediction Accuracy', icon: 'chart' },
+  { title: 'Real-time Doubt Resolution', desc: 'Ask any question anytime and get instant, contextual answers powered by MeritAI — learning never stops.', metric: '24/7', metricLabel: 'Available', icon: 'help' },
 ]
 
 const subjectCategories = [
@@ -31,28 +31,25 @@ const subjectCategories = [
 ]
 
 const testimonials = [
-  { quote: 'MyTuition helped us find an amazing Maths tutor for my son in just 2 days. The AI matching is incredible!', author: 'Priya Sharma', location: 'Ranchi', rating: 5, initials: 'PS', color: 'from-pink-500 to-rose-500' },
+  { quote: 'MyTuition helped us find an amazing Maths tutor for my son in just 2 days. The MeritAI matching is incredible!', author: 'Priya Sharma', location: 'Ranchi', rating: 5, initials: 'PS', color: 'from-pink-500 to-rose-500' },
   { quote: 'My daughter improved her Chemistry grades from C to A+ in just 3 months. Highly recommend!', author: 'Amit Verma', location: 'Jamshedpur', rating: 5, initials: 'AV', color: 'from-blue-500 to-cyan-500' },
   { quote: 'The tutors are highly qualified and very patient. Great platform for parents in Jharkhand.', author: 'Sunita Gupta', location: 'Bokaro', rating: 5, initials: 'SG', color: 'from-purple-500 to-indigo-500' },
   { quote: 'Found the perfect Physics tutor for NEET preparation. My son\'s confidence has improved drastically.', author: 'Rajesh Kumar', location: 'Dhanbad', rating: 5, initials: 'RK', color: 'from-orange-500 to-red-500' },
-  { quote: 'Very happy with the platform. Easy to use, great tutors, and the AI match was spot on!', author: 'Meera Singh', location: 'Ranchi', rating: 4, initials: 'MS', color: 'from-green-500 to-emerald-500' },
+  { quote: 'Very happy with the platform. Easy to use, great tutors, and the MeritAI match was spot on!', author: 'Meera Singh', location: 'Ranchi', rating: 4, initials: 'MS', color: 'from-green-500 to-emerald-500' },
   { quote: 'MY Tuition made it so simple to find a tutor for my child. The whole process took just one day.', author: 'Vikram Pandey', location: 'Hazaribagh', rating: 5, initials: 'VP', color: 'from-teal-500 to-cyan-500' },
 ]
 
 const faqs = [
   { q: 'What subjects do you cover?', a: 'We cover over 50 subjects across Academics (Maths, Science, English, etc.), Coding & AI, Languages, Music & Dance, and competitive exams like JEE, NEET, CLAT. If you don\'t see your subject, just ask us!' },
   { q: 'How are tutors verified?', a: 'Every tutor on MY Tuition goes through a rigorous verification process — background check, qualification verification, and a teaching demo. Only 1 in 5 applicants make it through.' },
-  { q: 'What is MyAI matching?', a: 'MyAI is our intelligent matching engine that analyzes your child\'s specific needs — class, subjects, learning style, budget, and location — to recommend the top 3 most suitable tutors. It\'s like having a personal education counselor.' },
+  { q: 'What is MeritAI matching?', a: 'MeritAI is our intelligent matching engine that analyzes your child\'s specific needs — class, subjects, learning style, budget, and location — to recommend the top 3 most suitable tutors. It\'s like having a personal education counselor.' },
   { q: 'Can I try a tutor before committing?', a: 'Yes! Many of our tutors offer a free demo class. You can try the session, see if it\'s a good fit, and then decide. No commitment needed.' },
   { q: 'How do I become a tutor?', a: 'Simply sign up as a tutor, complete your profile with qualifications and experience, upload your certificates, and once approved by our team, you can start receiving student requests.' },
   { q: 'What is the pricing?', a: 'Pricing varies by tutor and is set by them based on their experience and qualifications. You can filter by budget and compare profiles to find the best fit for your needs.' },
 ]
 
 const trustBadges = [
-  { name: 'Startup India', src: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHJ4PSI4IiBmaWxsPSIjMTBBQjYwIi8+PHRleHQgeD0iOCIgeT0iMjYiIGZpbGw9IndoaXRlIiBmb250LXNpemU9IjE0IiBmb250LXdlaWdodD0iYm9sZCI+U0k8L3RleHQ+PC9zdmc+' },
-  { name: 'Jharkhand Govt', src: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHJ4PSI4IiBmaWxsPSIjMjU2M0VCIi8+PHRleHQgeD0iNCIgeT0iMjYiIGZpbGw9IndoaXRlIiBmb250LXNpemU9IjEwIiBmb250LXdlaWdodD0iYm9sZCI+SkdPPC90ZXh0Pjwvc3ZnPg==' },
-  { name: 'AWS EdStart', src: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHJ4PSI4IiBmaWxsPSIjRkY5OTAwIi8+PHRleHQgeD0iNCIgeT0iMjYiIGZpbGw9IndoaXRlIiBmb250LXNpemU9IjEwIiBmb250LXdlaWdodD0iYm9sZCI+QVdTPC90ZXh0Pjwvc3ZnPg==' },
-  { name: 'Google for Edu', src: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHJ4PSI4IiBmaWxsPSIjNDI4NUY0Ii8+PHRleHQgeD0iNCIgeT0iMjYiIGZpbGw9IndoaXRlIiBmb250LXNpemU9IjEwIiBmb250LXdlaWdodD0iYm9sZCI+R0ZFPC90ZXh0Pjwvc3ZnPg==' },
+  { name: 'Merit Yard', src: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHJ4PSI4IiBmaWxsPSIjMTBBQjYwIi8+PHRleHQgeD0iOCIgeT0iMjYiIGZpbGw9IndoaXRlIiBmb250LXNpemU9IjE0IiBmb250LXdlaWdodD0iYm9sZCI+U0k8L3RleHQ+PC9zdmc+' },
 ]
 
 const facedAvatars = [
@@ -366,7 +363,7 @@ export default function Landing() {
         </section>
       </ScrollReveal>
 
-      {/* ── MyAI FEATURES ── */}
+      {/* ── MeritAI FEATURES ── */}
       <ScrollReveal>
         <section className="py-16 md:py-20 bg-gradient-to-b from-[#F8F9FC] to-white">
           <div className="max-w-7xl mx-auto px-4 sm:px-6">
@@ -375,9 +372,9 @@ export default function Landing() {
                 <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.455 2.456L21.75 6l-1.036.259a3.375 3.375 0 00-2.455 2.456z" />
                 </svg>
-                AI-Powered
+                MeritAI-Powered
               </span>
-              <h2 className="section-title mb-4">Meet <span className="text-myai">MyAI</span></h2>
+              <h2 className="section-title mb-4">Meet <span className="text-meritai">MeritAI</span></h2>
               <p className="text-gray-500 text-lg max-w-2xl mx-auto">Save hours, learn smarter. Intelligent features designed for your child's success.</p>
             </div>
 
@@ -396,7 +393,7 @@ export default function Landing() {
                         </svg>
                       </div>
                       <div className="text-right">
-                        <div className="text-2xl md:text-3xl font-extrabold text-myai">{f.metric}</div>
+                        <div className="text-2xl md:text-3xl font-extrabold text-meritai">{f.metric}</div>
                         <div className="text-xs text-gray-500 font-medium">{f.metricLabel}</div>
                       </div>
                     </div>

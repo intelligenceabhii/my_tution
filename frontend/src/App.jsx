@@ -21,6 +21,7 @@ import Privacy from './pages/Privacy'
 import Refund from './pages/Refund'
 import Favorites from './pages/Favorites'
 import Messages from './pages/Messages'
+import LearningProgress from './pages/LearningProgress'
 
 function LoadingScreen() {
   return (
@@ -71,6 +72,7 @@ function AppRoutes() {
           <Route path="/terms" element={<Terms />} />
           <Route path="/privacy" element={<Privacy />} />
           <Route path="/refund" element={<Refund />} />
+          <Route path="/learning" element={<ProtectedRoute roles={['parent', 'tutor']}><LearningProgress /></ProtectedRoute>} />
         </Routes>
       </main>
       <Footer />

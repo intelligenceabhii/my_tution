@@ -54,7 +54,10 @@ export default function Navbar() {
           ) : (
             <>
               {user.role === 'parent' && (
-                <Link to="/parent/dashboard" className="px-4 py-2 rounded-xl text-gray-600 hover:text-primary hover:bg-primary/5 transition-all font-medium">Dashboard</Link>
+                <>
+                  <Link to="/parent/dashboard" className="px-4 py-2 rounded-xl text-gray-600 hover:text-primary hover:bg-primary/5 transition-all font-medium">Dashboard</Link>
+                  <Link to="/learning" className="px-4 py-2 rounded-xl text-gray-600 hover:text-primary hover:bg-primary/5 transition-all font-medium">Learning</Link>
+                </>
               )}
               {user.role === 'tutor' && (
                 <Link to="/tutor/dashboard" className="px-4 py-2 rounded-xl text-gray-600 hover:text-primary hover:bg-primary/5 transition-all font-medium">Dashboard</Link>
@@ -145,7 +148,10 @@ export default function Navbar() {
           ) : (
             <>
               {user.role === 'parent' && (
-                <Link to="/parent/dashboard" onClick={() => setMenuOpen(false)} className="block px-4 py-3 rounded-xl text-gray-700 hover:bg-primary/5 transition font-medium">Dashboard</Link>
+                <>
+                  <Link to="/parent/dashboard" onClick={() => setMenuOpen(false)} className="block px-4 py-3 rounded-xl text-gray-700 hover:bg-primary/5 transition font-medium">Dashboard</Link>
+                  <Link to="/learning" onClick={() => setMenuOpen(false)} className="block px-4 py-3 rounded-xl text-gray-700 hover:bg-primary/5 transition font-medium">Learning</Link>
+                </>
               )}
               {user.role === 'tutor' && (
                 <Link to="/tutor/dashboard" onClick={() => setMenuOpen(false)} className="block px-4 py-3 rounded-xl text-gray-700 hover:bg-primary/5 transition font-medium">Dashboard</Link>

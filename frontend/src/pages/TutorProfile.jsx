@@ -31,7 +31,7 @@ export default function TutorProfile() {
 
   const summarize = async () => {
     try { const res = await API.post(`/ai/summarize-tutor/${id}`); setSummary(res.data.summary) }
-    catch (err) { alert('AI summary failed') }
+    catch (err) { alert('MeritAI summary failed') }
   }
 
   const toggleFavorite = async () => {
@@ -167,7 +167,7 @@ export default function TutorProfile() {
       <div className="bg-white premium-shadow rounded-2xl p-6 md:p-8 mb-6 border border-gray-100">
         <button onClick={summarize} className="bg-gradient-to-r from-gold to-gold-dark text-primary px-6 py-3 rounded-xl font-bold hover:shadow-premium hover:scale-[1.02] transition-all inline-flex items-center gap-2">
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
-          AI Summary
+          MeritAI Summary
         </button>
         {summary && (
           <div className="mt-4 p-5 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl text-gray-700 italic leading-relaxed border border-blue-100 shadow-inner">{summary}</div>

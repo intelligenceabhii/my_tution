@@ -122,7 +122,7 @@ export default function AdminDashboard() {
   const [selectedConvo, setSelectedConvo] = useState(null)
   const [convoMessages, setConvoMessages] = useState([])
   const [aiConfig, setAiConfig] = useState(null)
-  const [aiForm, setAiForm] = useState({ gemini_api_key: '', model_name: 'gemini-2.0-flash', temperature: 0.7, max_tokens: 2048, top_p: 0.95, match_enabled: true, summarize_enabled: true, match_prompt_template: '', summarize_prompt_template: '' })
+  const [aiForm, setAiForm] = useState({ ai_provider: 'gemini', gemini_api_key: '', model_name: 'gemini-2.0-flash', groq_api_key: '', groq_model: 'llama3-70b-8192', temperature: 0.7, max_tokens: 2048, top_p: 0.95, match_enabled: true, summarize_enabled: true, match_prompt_template: '', summarize_prompt_template: '' })
   const [aiSaving, setAiSaving] = useState(false)
   const [aiTestResult, setAiTestResult] = useState(null)
   const [aiTestLoading, setAiTestLoading] = useState(false)
@@ -137,7 +137,7 @@ export default function AdminDashboard() {
     API.get('/admin/requirements').then(r => setRequirements(r.data)).catch(() => {})
     API.get('/admin/reviews').then(r => setReviews(r.data)).catch(() => {})
     API.get('/admin/categories').then(r => setCategories(r.data)).catch(() => {})
-    API.get('/admin/ai-config').then(r => { setAiConfig(r.data); setAiForm({ gemini_api_key: r.data.gemini_api_key || '', model_name: r.data.model_name || 'gemini-2.0-flash', temperature: r.data.temperature ?? 0.7, max_tokens: r.data.max_tokens ?? 2048, top_p: r.data.top_p ?? 0.95, match_enabled: r.data.match_enabled ?? true, summarize_enabled: r.data.summarize_enabled ?? true, match_prompt_template: r.data.match_prompt_template || '', summarize_prompt_template: r.data.summarize_prompt_template || '' }) }).catch(() => {})
+    API.get('/admin/ai-config').then(r => { setAiConfig(r.data); setAiForm({ ai_provider: r.data.ai_provider || 'gemini', gemini_api_key: r.data.gemini_api_key || '', model_name: r.data.model_name || 'gemini-2.0-flash', groq_api_key: r.data.groq_api_key || '', groq_model: r.data.groq_model || 'llama3-70b-8192', temperature: r.data.temperature ?? 0.7, max_tokens: r.data.max_tokens ?? 2048, top_p: r.data.top_p ?? 0.95, match_enabled: r.data.match_enabled ?? true, summarize_enabled: r.data.summarize_enabled ?? true, match_prompt_template: r.data.match_prompt_template || '', summarize_prompt_template: r.data.summarize_prompt_template || '' }) }).catch(() => {})
     API.get('/admin/conversations').then(r => setConversations(r.data || [])).catch(() => {})
   }
 
@@ -194,7 +194,7 @@ export default function AdminDashboard() {
     { key: 'requirements', label: `Requirements`, count: requirements.length, icon: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2' },
     { key: 'reviews', label: `Reviews`, count: reviews.length, icon: 'M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z' },
     { key: 'users', label: `Users`, count: users.length, icon: 'M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z' },
-    { key: 'ai', label: `AI Settings`, icon: 'M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.455 2.456L21.75 6l-1.036.259a3.375 3.375 0 00-2.455 2.456z' },
+    { key: 'ai', label: `MeritAI Settings`, icon: 'M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.455 2.456L21.75 6l-1.036.259a3.375 3.375 0 00-2.455 2.456z' },
     { key: 'messages', label: `Messages`, count: conversations.length, icon: 'M8 10h.01M12 10h.01M16 10h.01M9 16H5l-1 1V5a2 2 0 012-2h14a2 2 0 012 2v6a2 2 0 01-2 2h-5l-5 5v-5z' },
   ]
 
@@ -547,7 +547,7 @@ export default function AdminDashboard() {
         {/* ── AI SETTINGS ── */}
         {activeTab === 'ai' && (
           <Section
-            title="AI Configuration"
+            title="MeritAI Configuration"
             icon={<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.455 2.456L21.75 6l-1.036.259a3.375 3.375 0 00-2.455 2.456z" />}
             gradient="from-purple-500 to-cyan-500"
             action={
@@ -556,7 +556,7 @@ export default function AdminDashboard() {
                   setAiSaving(true); setAiMsg('')
                   try {
                     await API.put('/admin/ai-config', aiForm)
-                    setAiMsg('AI config saved!')
+                    setAiMsg('MeritAI config saved!')
                     const fresh = await API.get('/admin/ai-config')
                     setAiConfig(fresh.data)
                   } catch (err) { setAiMsg(err.response?.data?.detail || 'Failed to save') }
@@ -575,16 +575,54 @@ export default function AdminDashboard() {
                   <svg className="w-4 h-4 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
                   API & Model
                 </h3>
+
                 <div>
-                  <label className="block text-xs font-medium text-gray-500 mb-1">Gemini API Key</label>
-                  <input type="password" value={aiForm.gemini_api_key} onChange={e => setAiForm({ ...aiForm, gemini_api_key: e.target.value })} className="input-field text-sm font-mono" placeholder="sk-..." />
-                  <p className="text-xs text-gray-400 mt-1">Leave empty to use the key from .env file</p>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-medium text-gray-500 mb-1">Model Name</label>
-                    <input type="text" value={aiForm.model_name} onChange={e => setAiForm({ ...aiForm, model_name: e.target.value })} className="input-field text-sm" placeholder="gemini-2.0-flash" />
+                  <label className="block text-xs font-medium text-gray-500 mb-1">MeritAI Provider</label>
+                  <div className="flex gap-3">
+                    <label className={`flex-1 flex items-center justify-center gap-2 p-3 rounded-xl border-2 cursor-pointer transition-all text-sm font-medium ${aiForm.ai_provider === 'gemini' ? 'border-purple-500 bg-purple-50 text-purple-700' : 'border-gray-200 bg-white text-gray-500 hover:border-gray-300'}`}>
+                      <input type="radio" name="ai_provider" value="gemini" checked={aiForm.ai_provider === 'gemini'} onChange={e => setAiForm({ ...aiForm, ai_provider: e.target.value })} className="sr-only" />
+                      <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+                      Gemini
+                    </label>
+                    <label className={`flex-1 flex items-center justify-center gap-2 p-3 rounded-xl border-2 cursor-pointer transition-all text-sm font-medium ${aiForm.ai_provider === 'groq' ? 'border-purple-500 bg-purple-50 text-purple-700' : 'border-gray-200 bg-white text-gray-500 hover:border-gray-300'}`}>
+                      <input type="radio" name="ai_provider" value="groq" checked={aiForm.ai_provider === 'groq'} onChange={e => setAiForm({ ...aiForm, ai_provider: e.target.value })} className="sr-only" />
+                      <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>
+                      Groq
+                    </label>
                   </div>
+                </div>
+
+                {aiForm.ai_provider === 'gemini' ? (
+                  <>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-500 mb-1">Gemini API Key</label>
+                      <input type="password" value={aiForm.gemini_api_key} onChange={e => setAiForm({ ...aiForm, gemini_api_key: e.target.value })} className="input-field text-sm font-mono" placeholder="sk-..." />
+                      <p className="text-xs text-gray-400 mt-1">Leave empty to use the key from .env file</p>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-xs font-medium text-gray-500 mb-1">Model Name</label>
+                        <input type="text" value={aiForm.model_name} onChange={e => setAiForm({ ...aiForm, model_name: e.target.value })} className="input-field text-sm" placeholder="gemini-2.0-flash" />
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-500 mb-1">Groq API Key</label>
+                      <input type="password" value={aiForm.groq_api_key} onChange={e => setAiForm({ ...aiForm, groq_api_key: e.target.value })} className="input-field text-sm font-mono" placeholder="gsk_..." />
+                      <p className="text-xs text-gray-400 mt-1">Leave empty to use the key from .env file</p>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-xs font-medium text-gray-500 mb-1">Groq Model</label>
+                        <input type="text" value={aiForm.groq_model} onChange={e => setAiForm({ ...aiForm, groq_model: e.target.value })} className="input-field text-sm" placeholder="llama3-70b-8192" />
+                      </div>
+                    </div>
+                  </>
+                )}
+
+                <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs font-medium text-gray-500 mb-1">Max Tokens</label>
                     <input type="number" value={aiForm.max_tokens} onChange={e => setAiForm({ ...aiForm, max_tokens: parseInt(e.target.value) || 2048 })} className="input-field text-sm" min={1} max={8192} />
@@ -613,14 +651,14 @@ export default function AdminDashboard() {
                       <input type="checkbox" checked={aiForm.match_enabled} onChange={e => setAiForm({ ...aiForm, match_enabled: e.target.checked })} className="sr-only peer" />
                       <div className="w-10 h-5 bg-gray-200 rounded-full peer-checked:bg-green-500 transition-colors after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:w-4 after:h-4 after:bg-white after:rounded-full after:shadow after:transition-all peer-checked:after:translate-x-5" />
                     </div>
-                    <span className="text-sm font-medium text-gray-700">AI Matching</span>
+                    <span className="text-sm font-medium text-gray-700">MeritAI Matching</span>
                   </label>
                   <label className="flex items-center gap-3 cursor-pointer">
                     <div className="relative">
                       <input type="checkbox" checked={aiForm.summarize_enabled} onChange={e => setAiForm({ ...aiForm, summarize_enabled: e.target.checked })} className="sr-only peer" />
                       <div className="w-10 h-5 bg-gray-200 rounded-full peer-checked:bg-green-500 transition-colors after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:w-4 after:h-4 after:bg-white after:rounded-full after:shadow after:transition-all peer-checked:after:translate-x-5" />
                     </div>
-                    <span className="text-sm font-medium text-gray-700">AI Summaries</span>
+                    <span className="text-sm font-medium text-gray-700">MeritAI Summaries</span>
                   </label>
                 </div>
 
@@ -677,7 +715,8 @@ export default function AdminDashboard() {
                 <div className="p-4 bg-gradient-to-br from-purple-50 to-cyan-50 rounded-xl border border-purple-100 text-sm">
                   <p className="font-semibold text-purple-800 mb-1">Current Status</p>
                   <div className="flex flex-wrap gap-4 text-xs text-purple-700">
-                    <span>Model: <strong>{aiConfig?.model_name || 'gemini-2.0-flash'}</strong></span>
+                    <span>Provider: <strong>{aiForm.ai_provider === 'groq' ? 'Groq' : 'Gemini'}</strong></span>
+                    <span>Model: <strong>{aiForm.ai_provider === 'groq' ? (aiForm.groq_model || 'llama3-70b-8192') : (aiConfig?.model_name || 'gemini-2.0-flash')}</strong></span>
                     <span>Matching: <strong>{aiForm.match_enabled ? 'ON' : 'OFF'}</strong></span>
                     <span>Summaries: <strong>{aiForm.summarize_enabled ? 'ON' : 'OFF'}</strong></span>
                     <span>Custom Prompt: <strong>{aiForm.match_prompt_template ? 'Custom' : 'Default'}</strong></span>

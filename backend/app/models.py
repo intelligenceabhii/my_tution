@@ -152,8 +152,11 @@ class AIConfig(Base):
     __tablename__ = "ai_config"
 
     id = Column(Integer, primary_key=True, index=True)
+    ai_provider = Column(String, default="gemini")
     gemini_api_key = Column(String, default="")
     model_name = Column(String, default="gemini-2.0-flash")
+    groq_api_key = Column(String, default="")
+    groq_model = Column(String, default="llama3-70b-8192")
     temperature = Column(Float, default=0.7)
     max_tokens = Column(Integer, default=2048)
     top_p = Column(Float, default=0.95)
@@ -162,6 +165,35 @@ class AIConfig(Base):
     match_prompt_template = Column(Text, default="")
     summarize_prompt_template = Column(Text, default="")
     updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+
+class LearningSession(Base):
+    __tablename__ = "learning_sessions"
+    id = Column(Integer, primary_key=True, index=True)
+    requirement_id = Column(Integer, ForeignKey("parent_requirements.id"), nullable=False)
+    tutor_id = Column(Integer, ForeignKey("tutor_profiles.id"), nullable=False)
+    subject = Column(String, nullable=False)
+    topics_covered = Column(JSON, nullable=False)
+    notes = Column(Text, nullable=True)
+    duration_minutes = Column(Integer, nullable=True)
+    session_date = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+    requirement = relationship("ParentRequirement")
+    tutor_profile = relationship("TutorProfile")
+
+class DoubtQuery(Base):
+    __tablename__ = "doubt_queries"
+    id = Column(Integer, primary_key=True, index=True)
+    requirement_id = Column(Integer, ForeignKey("parent_requirements.id"), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    subject = Column(String, nullable=True)
+    question = Column(Text, nullable=False)
+    answer = Column(Text, nullable=True)
+    context_topics = Column(JSON, nullable=True)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+    requirement = relationship("ParentRequirement")
+    user = relationship("User")
 
 class Report(Base):
     __tablename__ = "reports"

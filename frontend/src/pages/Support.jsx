@@ -4,7 +4,7 @@ const faqs = [
   { q: 'How do I find a tutor?', a: 'Go to Find Tutors, apply filters like subject, class, budget, and location, and browse verified tutor profiles. You can send a request directly from their profile.' },
   { q: 'How do I become a tutor?', a: 'Sign up with the "Become a Tutor" option, complete your profile with qualifications and experience, upload certificates, and submit for verification.' },
   { q: 'What is the verification process for tutors?', a: 'We verify educational qualifications, identity documents, teaching experience, and conduct a demo session. Only 1 in 5 applicants are approved.' },
-  { q: 'How does MyAI matching work?', a: 'MyAI analyzes your requirements — subject, class, budget, learning style — and recommends the top 3 most suitable tutors from our verified pool.' },
+  { q: 'How does MeritAI matching work?', a: 'MeritAI analyzes your requirements — subject, class, budget, learning style — and recommends the top 3 most suitable tutors from our verified pool.' },
   { q: 'Can I switch tutors?', a: 'Yes, you can request a different tutor anytime. Simply raise a request from your dashboard, and we\'ll help find a better match.' },
   { q: 'How do I contact support?', a: 'You can email us, call us, or fill out the contact form. We typically respond within 24 hours during business days.' },
 ]

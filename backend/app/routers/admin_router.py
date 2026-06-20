@@ -395,19 +395,40 @@ def test_ai_config(
     _=Depends(admin_only),
 ):
     config = get_or_create_ai_config(db)
-    api_key = config.gemini_api_key
-    if not api_key:
-        import os
-        api_key = os.getenv("GEMINI_API_KEY", "")
-    if not api_key:
-        raise HTTPException(status_code=400, detail="No API key configured. Set it in .env or via AI Settings.")
-    try:
-        from google import genai
-        client = genai.Client(api_key=api_key)
-        response = client.models.generate_content(
-            model=config.model_name or "gemini-2.0-flash",
-            contents="Respond with just: OK",
-        )
-        return {"status": "success", "message": response.text.strip()}
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=f"AI connection failed: {str(e)}")
+    provider = config.ai_provider or "gemini"
+
+    if provider == "groq":
+        api_key = config.groq_api_key
+        if not api_key:
+            import os
+            api_key = os.getenv("GROQ_API_KEY", "")
+        if not api_key:
+            raise HTTPException(status_code=400, detail="No Groq API key configured. Set it in AI Settings or .env file.")
+        try:
+            from groq import Groq
+            client = Groq(api_key=api_key)
+            response = client.chat.completions.create(
+                model=config.groq_model or "llama3-70b-8192",
+                messages=[{"role": "user", "content": "Respond with just: OK"}],
+                max_tokens=10,
+            )
+            return {"status": "success", "message": response.choices[0].message.content.strip()}
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=f"Groq connection failed: {str(e)}")
+    else:
+        api_key = config.gemini_api_key
+        if not api_key:
+            import os
+            api_key = os.getenv("GEMINI_API_KEY", "")
+        if not api_key:
+            raise HTTPException(status_code=400, detail="No Gemini API key configured. Set it in .env or via AI Settings.")
+        try:
+            from google import genai
+            client = genai.Client(api_key=api_key)
+            response = client.models.generate_content(
+                model=config.model_name or "gemini-2.0-flash",
+                contents="Respond with just: OK",
+            )
+            return {"status": "success", "message": response.text.strip()}
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=f"Gemini connection failed: {str(e)}")

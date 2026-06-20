@@ -1,0 +1,5 @@
+
+
+Parent: parent@test.com / Test@123
+Tutor: tutor@test.com / Test@123
+Admin: Abhishek@merityard.com / Merityard@123

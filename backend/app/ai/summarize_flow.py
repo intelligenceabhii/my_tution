@@ -1,7 +1,8 @@
 import json
 from sqlalchemy.orm import Session
 from ..models import TutorProfile
-from .gemini_client import generate_content, is_summarize_enabled, get_summarize_prompt_template
+from .ai_client import generate_content
+from .gemini_client import is_summarize_enabled, get_summarize_prompt_template
 
 def summarize_tutor_profile(tutor_id: int, db: Session) -> str:
     if not is_summarize_enabled():

@@ -1,7 +1,8 @@
 import json
 from sqlalchemy.orm import Session
 from ..models import TutorProfile, ParentRequirement, AIMatchLog
-from .gemini_client import generate_content, is_match_enabled, get_match_prompt_template
+from .ai_client import generate_content
+from .gemini_client import is_match_enabled, get_match_prompt_template
 
 def run_ai_match(requirement_id: int, db: Session) -> dict:
     if not is_match_enabled():

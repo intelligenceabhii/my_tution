@@ -255,10 +255,51 @@ class CategoryUpdate(BaseModel):
     subjects: Optional[List[str]] = None
 
 
+class LearningSessionCreate(BaseModel):
+    requirement_id: int
+    subject: str
+    topics_covered: List[str]
+    notes: Optional[str] = None
+    duration_minutes: Optional[int] = None
+
+class LearningSessionResponse(BaseModel):
+    id: int
+    requirement_id: int
+    tutor_id: int
+    subject: str
+    topics_covered: List[str]
+    notes: Optional[str] = None
+    duration_minutes: Optional[int] = None
+    session_date: datetime
+    created_at: datetime
+    tutor_name: Optional[str] = None
+    tutor_qualification: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
+class DoubtRequest(BaseModel):
+    requirement_id: int
+    question: str
+    subject: Optional[str] = None
+
+class DoubtResponse(BaseModel):
+    id: int
+    question: str
+    answer: Optional[str] = None
+    context_topics: Optional[List[str]] = None
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
 class AIConfigResponse(BaseModel):
     id: int
+    ai_provider: str = "gemini"
     gemini_api_key: str = ""
     model_name: str = "gemini-2.0-flash"
+    groq_api_key: str = ""
+    groq_model: str = "llama3-70b-8192"
     temperature: float = 0.7
     max_tokens: int = 2048
     top_p: float = 0.95
@@ -272,8 +313,11 @@ class AIConfigResponse(BaseModel):
         from_attributes = True
 
 class AIConfigUpdate(BaseModel):
+    ai_provider: Optional[str] = None
     gemini_api_key: Optional[str] = None
     model_name: Optional[str] = None
+    groq_api_key: Optional[str] = None
+    groq_model: Optional[str] = None
     temperature: Optional[float] = None
     max_tokens: Optional[int] = None
     top_p: Optional[float] = None

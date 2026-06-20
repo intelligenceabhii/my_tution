@@ -15,7 +15,7 @@ export default function AIMatch() {
       const res = await API.post(`/ai/match/${reqId}`)
       setMatches(res.data)
     } catch (err) {
-      setError(err.response?.data?.detail || 'AI matching failed. Make sure GEMINI_API_KEY is set.')
+      setError(err.response?.data?.detail || 'MeritAI matching failed. Make sure GEMINI_API_KEY is set.')
     }
     setLoading(false)
   }
@@ -30,15 +30,15 @@ export default function AIMatch() {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
           </svg>
         </div>
-        <h1 className="text-3xl md:text-4xl font-extrabold text-primary">AI Tutor Match</h1>
-        <p className="text-gray-500 mt-2">Powered by Google Gemini — finding the best tutors for requirement #{reqId}</p>
+        <h1 className="text-3xl md:text-4xl font-extrabold text-primary">MeritAI Tutor Match</h1>
+        <p className="text-gray-500 mt-2">Powered by MeritAI — finding the best tutors for requirement #{reqId}</p>
       </div>
 
       {loading && (
         <div className="text-center py-20 bg-white premium-shadow rounded-2xl border border-gray-100">
           <div className="w-16 h-16 border-4 border-primary border-t-gold rounded-full animate-spin mx-auto mb-6" />
           <p className="text-2xl font-bold text-primary">Analyzing Tutors...</p>
-          <p className="text-gray-500 mt-2">Gemini is matching your requirement with available tutors</p>
+          <p className="text-gray-500 mt-2">MeritAI is matching your requirement with available tutors</p>
           <div className="flex justify-center gap-1.5 mt-6">
             {[0, 1, 2].map(i => (
               <div key={i} className="w-3 h-3 bg-primary rounded-full animate-bounce" style={{ animationDelay: `${i * 0.15}s` }} />
@@ -97,7 +97,7 @@ export default function AIMatch() {
           <div className="mt-8 flex gap-4 justify-center flex-wrap">
             <button onClick={runMatch} className="btn-gold inline-flex items-center gap-2">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
-              Re-run AI Match
+              Re-run MeritAI Match
             </button>
             <Link to="/parent/dashboard" className="btn-primary inline-flex items-center gap-2">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>

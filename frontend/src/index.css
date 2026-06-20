@@ -151,11 +151,11 @@
     @apply text-sm text-gray-500 font-medium;
   }
 
-  .myai-gradient {
+  .meritai-gradient {
     @apply bg-gradient-to-r from-purple-600 via-blue-500 to-cyan-400;
   }
 
-  .myai-glow {
+  .meritai-glow {
     box-shadow: 0 0 40px rgba(99, 102, 241, 0.15), 0 0 80px rgba(6, 182, 212, 0.1);
   }
 
@@ -196,7 +196,7 @@
     mask-composite: exclude;
   }
 
-  .text-myai {
+  .text-meritai {
     @apply bg-clip-text text-transparent bg-gradient-to-r from-purple-600 via-blue-500 to-cyan-400;
   }
 }

@@ -37,7 +37,7 @@ port_available() {
 find_free_port() {
     local port="$1"
     while ! port_available "$port"; do
-        echo -e "${YELLOW}  Port $port is in use, trying $((port + 1))...${NC}"
+        echo -e "${YELLOW}  Port $port is in use, trying $((port + 1))...${NC}" >&2
         port=$((port + 1))
     done
     echo "$port"

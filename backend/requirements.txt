@@ -7,6 +7,7 @@ bcrypt
 python-multipart
 python-dotenv
 google-genai
+groq
 mcp
 httpx
 aiofiles
