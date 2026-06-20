@@ -196,14 +196,31 @@ class FavoriteResponse(BaseModel):
         from_attributes = True
 
 
-class MessageCreate(BaseModel):
+class ConversationCreate(BaseModel):
     receiver_id: int
-    tutor_profile_id: int
+    subject: Optional[str] = None
+
+class ConversationResponse(BaseModel):
+    id: int
+    subject: Optional[str] = None
+    participant_ids: List[int]
+    last_message_at: Optional[datetime] = None
+    created_at: datetime
+    other_user_name: Optional[str] = None
+    last_message: Optional[str] = None
+    unread_count: int = 0
+
+    class Config:
+        from_attributes = True
+
+class MessageCreate(BaseModel):
+    conversation_id: int
     message: str
 
 
 class MessageResponse(BaseModel):
     id: int
+    conversation_id: int
     sender_id: int
     receiver_id: int
     message: str

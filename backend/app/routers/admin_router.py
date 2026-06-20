@@ -1,8 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy.orm import Session, joinedload
+from sqlalchemy import func
 from ..database import get_db
-from ..models import User, TutorProfile, ParentRequirement, TutorApplication, Review, SubjectCategoryModel, AIConfig
+from ..models import User, TutorProfile, ParentRequirement, TutorApplication, Review, SubjectCategoryModel, AIConfig, Conversation, Message
 from ..schemas import AdminStats, TutorApprovalResponse, UserAdminResponse, AdminApplicationResponse, ApplicationStatusUpdate, AdminRequirementResponse, AdminReviewResponse, SubjectCategory, CategoryCreate, CategoryUpdate, AIConfigResponse, AIConfigUpdate
 from ..auth import hash_password
 from ..dependencies import get_current_user, admin_only
@@ -347,6 +348,46 @@ def update_ai_config(
     db.commit()
     db.refresh(config)
     return config
+
+@router.get("/conversations")
+def admin_list_conversations(
+    db: Session = Depends(get_db),
+    _=Depends(admin_only),
+):
+    convos = db.query(Conversation).order_by(Conversation.last_message_at.desc()).all()
+    result = []
+    for c in convos:
+        users = db.query(User).filter(User.id.in_(c.participant_ids)).all()
+        user_names = {u.id: u.email.split("@")[0] for u in users}
+        last_msg = db.query(Message).filter(Message.conversation_id == c.id).order_by(Message.created_at.desc()).first()
+        msg_count = db.query(func.count(Message.id)).filter(Message.conversation_id == c.id).scalar() or 0
+        result.append({
+            "id": c.id,
+            "participant_ids": c.participant_ids,
+            "participant_names": [user_names.get(pid, "Unknown") for pid in c.participant_ids],
+            "last_message_at": c.last_message_at,
+            "message_count": msg_count,
+            "last_message_preview": last_msg.message[:100] if last_msg else None,
+            "created_at": c.created_at,
+        })
+    return result
+
+@router.get("/conversations/{conversation_id}/messages")
+def admin_get_conversation_messages(
+    conversation_id: int,
+    db: Session = Depends(get_db),
+    _=Depends(admin_only),
+):
+    msgs = db.query(Message).filter(Message.conversation_id == conversation_id).options(
+        joinedload(Message.sender),
+    ).order_by(Message.created_at.asc()).all()
+    return [{
+        "id": m.id,
+        "sender_email": m.sender.email if m.sender else "Unknown",
+        "message": m.message,
+        "is_read": m.is_read,
+        "created_at": m.created_at,
+    } for m in msgs]
 
 @router.post("/ai-config/test")
 def test_ai_config(

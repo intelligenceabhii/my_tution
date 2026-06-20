@@ -115,9 +115,20 @@ class Favorite(Base):
     tutor = relationship("TutorProfile")
 
 
+class Conversation(Base):
+    __tablename__ = "conversations"
+    id = Column(Integer, primary_key=True, index=True)
+    subject = Column(String, nullable=True)
+    participant_ids = Column(JSON, nullable=False)
+    last_message_at = Column(DateTime, nullable=True)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+    messages = relationship("Message", back_populates="conversation", order_by="Message.created_at")
+
 class Message(Base):
     __tablename__ = "messages"
     id = Column(Integer, primary_key=True, index=True)
+    conversation_id = Column(Integer, ForeignKey("conversations.id"), nullable=False)
     sender_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     receiver_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     tutor_profile_id = Column(Integer, ForeignKey("tutor_profiles.id"), nullable=True)
@@ -126,6 +137,7 @@ class Message(Base):
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     sender = relationship("User", foreign_keys=[sender_id])
     receiver = relationship("User", foreign_keys=[receiver_id])
+    conversation = relationship("Conversation", back_populates="messages")
 
 
 class SubjectCategoryModel(Base):

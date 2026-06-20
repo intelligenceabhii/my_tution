@@ -118,6 +118,9 @@ export default function AdminDashboard() {
   const [editingCategory, setEditingCategory] = useState(null)
   const [catForm, setCatForm] = useState({ name: '', icon: '', subjectInput: '', subjects: [] })
 
+  const [conversations, setConversations] = useState([])
+  const [selectedConvo, setSelectedConvo] = useState(null)
+  const [convoMessages, setConvoMessages] = useState([])
   const [aiConfig, setAiConfig] = useState(null)
   const [aiForm, setAiForm] = useState({ gemini_api_key: '', model_name: 'gemini-2.0-flash', temperature: 0.7, max_tokens: 2048, top_p: 0.95, match_enabled: true, summarize_enabled: true, match_prompt_template: '', summarize_prompt_template: '' })
   const [aiSaving, setAiSaving] = useState(false)
@@ -135,6 +138,7 @@ export default function AdminDashboard() {
     API.get('/admin/reviews').then(r => setReviews(r.data)).catch(() => {})
     API.get('/admin/categories').then(r => setCategories(r.data)).catch(() => {})
     API.get('/admin/ai-config').then(r => { setAiConfig(r.data); setAiForm({ gemini_api_key: r.data.gemini_api_key || '', model_name: r.data.model_name || 'gemini-2.0-flash', temperature: r.data.temperature ?? 0.7, max_tokens: r.data.max_tokens ?? 2048, top_p: r.data.top_p ?? 0.95, match_enabled: r.data.match_enabled ?? true, summarize_enabled: r.data.summarize_enabled ?? true, match_prompt_template: r.data.match_prompt_template || '', summarize_prompt_template: r.data.summarize_prompt_template || '' }) }).catch(() => {})
+    API.get('/admin/conversations').then(r => setConversations(r.data || [])).catch(() => {})
   }
 
   useEffect(() => { fetchData() }, [])
@@ -191,6 +195,7 @@ export default function AdminDashboard() {
     { key: 'reviews', label: `Reviews`, count: reviews.length, icon: 'M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z' },
     { key: 'users', label: `Users`, count: users.length, icon: 'M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z' },
     { key: 'ai', label: `AI Settings`, icon: 'M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.455 2.456L21.75 6l-1.036.259a3.375 3.375 0 00-2.455 2.456z' },
+    { key: 'messages', label: `Messages`, count: conversations.length, icon: 'M8 10h.01M12 10h.01M16 10h.01M9 16H5l-1 1V5a2 2 0 012-2h14a2 2 0 012 2v6a2 2 0 01-2 2h-5l-5 5v-5z' },
   ]
 
   const statCards = stats ? [
@@ -687,7 +692,77 @@ export default function AdminDashboard() {
         )}
       </div>
 
-      {/* ── CATEGORY MODAL ── */}
+        {/* ── MESSAGES ── */}
+        {activeTab === 'messages' && (
+          <div className="animate-fade-in">
+            <Section
+              title="All Conversations"
+              icon={<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5l-1 1V5a2 2 0 012-2h14a2 2 0 012 2v6a2 2 0 01-2 2h-5l-5 5v-5z" />}
+              gradient="from-blue-500 to-cyan-500"
+              action={<span className="text-xs bg-blue-50 text-blue-700 px-2.5 py-1 rounded-full font-medium border border-blue-200">{conversations.length} conversations</span>}
+            >
+              {selectedConvo ? (
+                <div>
+                  <button onClick={() => { setSelectedConvo(null); setConvoMessages([]) }} className="text-sm text-primary font-semibold hover:underline mb-4 inline-flex items-center gap-1">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+                    Back to conversations
+                  </button>
+                  <div className="bg-gray-50 rounded-xl p-4 space-y-3 max-h-[500px] overflow-y-auto">
+                    {convoMessages.length === 0 ? (
+                      <p className="text-gray-400 text-sm text-center py-8">No messages in this conversation.</p>
+                    ) : (
+                      convoMessages.map((m) => (
+                        <div key={m.id} className="bg-white p-3 rounded-xl border border-gray-100">
+                          <div className="flex items-center justify-between gap-2 mb-1">
+                            <span className="text-xs font-bold text-primary">{m.sender_email}</span>
+                            <span className="text-[10px] text-gray-400">{new Date(m.created_at).toLocaleString()}</span>
+                          </div>
+                          <p className="text-sm text-gray-700">{m.message}</p>
+                          <div className="mt-1 flex items-center gap-2">
+                            <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${m.is_read ? 'bg-green-50 text-green-600' : 'bg-amber-50 text-amber-600'}`}>{m.is_read ? 'Read' : 'Unread'}</span>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-2 max-h-[500px] overflow-y-auto pr-1">
+                  {conversations.length === 0 ? (
+                    <p className="text-gray-500 text-center py-8 text-sm">No conversations yet.</p>
+                  ) : (
+                    conversations.map((c) => (
+                      <button
+                        key={c.id}
+                        onClick={async () => {
+                          setSelectedConvo(c.id)
+                          try {
+                            const res = await API.get(`/admin/conversations/${c.id}/messages`)
+                            setConvoMessages(res.data || [])
+                          } catch { setConvoMessages([]) }
+                        }}
+                        className="w-full text-left p-4 border border-gray-100 rounded-xl hover:bg-gray-50/50 transition flex items-start gap-3"
+                      >
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="font-bold text-primary text-sm">{(c.participant_names || []).join(', ')}</span>
+                            <span className="text-xs text-gray-400">{c.last_message_at ? new Date(c.last_message_at).toLocaleDateString() : ''}</span>
+                          </div>
+                          <p className="text-xs text-gray-500 mt-0.5 truncate">{c.last_message_preview || 'No messages'}</p>
+                          <div className="flex items-center gap-2 mt-1">
+                            <span className="text-[10px] text-gray-400">{c.message_count} messages</span>
+                          </div>
+                        </div>
+                      </button>
+                    ))
+                  )}
+                </div>
+              )}
+            </Section>
+          </div>
+        )}
+
+        {/* ── CATEGORY MODAL ── */}
       {showCategoryModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm animate-fade-in p-4">
           <div className="bg-white rounded-2xl shadow-2xl p-6 md:p-8 w-full max-w-lg mx-auto animate-scale-in">

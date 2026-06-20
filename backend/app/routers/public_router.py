@@ -4,8 +4,8 @@ from sqlalchemy import func
 from typing import Optional
 from pydantic import BaseModel
 from ..database import get_db
-from ..models import User, TutorProfile, Favorite, Message, Review, Report, SubjectCategoryModel
-from ..schemas import TutorBrowseResponse, FavoriteResponse, MessageCreate, MessageResponse, ReportCreate, SubjectCategory
+from ..models import User, TutorProfile, Favorite, Review, Report, SubjectCategoryModel
+from ..schemas import TutorBrowseResponse, FavoriteResponse, ReportCreate, SubjectCategory
 from ..dependencies import get_current_user
 from ..utils.email import send_contact_email
 
@@ -183,61 +183,6 @@ def check_favorite(
 ):
     fav = db.query(Favorite).filter(Favorite.user_id == current_user.id, Favorite.tutor_id == tutor_id).first()
     return {"is_favorite": fav is not None}
-
-@router.post("/messages")
-def send_message(
-    msg: MessageCreate,
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
-):
-    message = Message(
-        sender_id=current_user.id,
-        receiver_id=msg.receiver_id,
-        tutor_profile_id=msg.tutor_profile_id,
-        message=msg.message,
-    )
-    db.add(message)
-    db.commit()
-    return {"message": "Message sent"}
-
-@router.get("/messages", response_model=list[MessageResponse])
-def list_messages(
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
-):
-    msgs = db.query(Message).filter(
-        (Message.sender_id == current_user.id) | (Message.receiver_id == current_user.id)
-    ).options(
-        joinedload(Message.sender),
-        joinedload(Message.receiver),
-    ).order_by(Message.created_at.desc()).all()
-
-    result = []
-    for m in msgs:
-        other = m.sender if m.receiver_id == current_user.id else m.receiver
-        result.append(MessageResponse(
-            id=m.id,
-            sender_id=m.sender_id,
-            receiver_id=m.receiver_id,
-            message=m.message,
-            is_read=m.is_read,
-            created_at=m.created_at,
-            sender_name=other.email if other else "Unknown",
-        ))
-    return result
-
-@router.put("/messages/{message_id}/read")
-def mark_read(
-    message_id: int,
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
-):
-    msg = db.query(Message).filter(Message.id == message_id, Message.receiver_id == current_user.id).first()
-    if not msg:
-        raise HTTPException(status_code=404, detail="Message not found")
-    msg.is_read = True
-    db.commit()
-    return {"message": "Marked as read"}
 
 @router.post("/reports")
 def report_tutor(

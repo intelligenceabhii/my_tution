@@ -1,12 +1,28 @@
 import { Link, useNavigate } from 'react-router-dom'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useAuth } from '../context/AuthContext'
+import API from '../api/axios'
 
 export default function Navbar() {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
   const [menuOpen, setMenuOpen] = useState(false)
   const [dropdownOpen, setDropdownOpen] = useState(false)
+  const [unread, setUnread] = useState(0)
+
+  useEffect(() => {
+    if (!user) { setUnread(0); return }
+    const fetchUnread = async () => {
+      try {
+        const res = await API.get('/conversations')
+        const total = (res.data || []).reduce((sum, c) => sum + (c.unread_count || 0), 0)
+        setUnread(total)
+      } catch { setUnread(0) }
+    }
+    fetchUnread()
+    const interval = setInterval(fetchUnread, 15000)
+    return () => clearInterval(interval)
+  }, [user])
 
   const handleLogout = () => {
     logout()
@@ -51,10 +67,13 @@ export default function Navbar() {
                   <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
                 </svg>
               </Link>
-              <Link to="/messages" className="px-3 py-2 rounded-xl text-gray-500 hover:text-primary hover:bg-primary/5 transition-all font-medium" title="Messages">
+              <Link to="/messages" className="px-3 py-2 rounded-xl text-gray-500 hover:text-primary hover:bg-primary/5 transition-all font-medium relative" title="Messages">
                 <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
                   <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
                 </svg>
+                {unread > 0 && (
+                  <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center shadow-md">{unread > 9 ? '9+' : unread}</span>
+                )}
               </Link>
               <div className="relative">
                 <button onClick={() => setDropdownOpen(!dropdownOpen)} className="flex items-center gap-2 ml-2 px-3 py-1.5 rounded-xl hover:bg-primary/5 transition-all">
@@ -84,7 +103,12 @@ export default function Navbar() {
                           <Link to="/admin" onClick={() => setDropdownOpen(false)} className="block px-4 py-2 text-sm text-gray-700 hover:bg-primary/5 transition">Admin Panel</Link>
                         )}
                         <Link to="/favorites" onClick={() => setDropdownOpen(false)} className="block px-4 py-2 text-sm text-gray-700 hover:bg-primary/5 transition">Saved Tutors</Link>
-                        <Link to="/messages" onClick={() => setDropdownOpen(false)} className="block px-4 py-2 text-sm text-gray-700 hover:bg-primary/5 transition">Messages</Link>
+                        <Link to="/messages" onClick={() => setDropdownOpen(false)} className="block px-4 py-2 text-sm text-gray-700 hover:bg-primary/5 transition relative">
+                          Messages
+                          {unread > 0 && (
+                            <span className="ml-2 inline-flex items-center justify-center w-5 h-5 bg-red-500 text-white text-[10px] font-bold rounded-full">{unread > 9 ? '9+' : unread}</span>
+                          )}
+                        </Link>
                       </div>
                       <div className="border-t border-gray-100 pt-1">
                         <button onClick={() => { handleLogout(); setDropdownOpen(false) }} className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition font-medium">Logout</button>
@@ -135,11 +159,14 @@ export default function Navbar() {
                 </svg>
                 Saved
               </Link>
-              <Link to="/messages" onClick={() => setMenuOpen(false)} className="block px-4 py-3 rounded-xl text-gray-700 hover:bg-primary/5 transition font-medium">
+              <Link to="/messages" onClick={() => setMenuOpen(false)} className="block px-4 py-3 rounded-xl text-gray-700 hover:bg-primary/5 transition font-medium relative">
                 <svg className="w-4 h-4 inline-block mr-1.5 -mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
                   <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
                 </svg>
                 Messages
+                {unread > 0 && (
+                  <span className="ml-1.5 inline-flex items-center justify-center w-5 h-5 bg-red-500 text-white text-[10px] font-bold rounded-full">{unread > 9 ? '9+' : unread}</span>
+                )}
               </Link>
               <hr className="border-gray-100 my-2" />
               <span className="block px-4 py-1 text-gray-500 text-xs">{user.email}</span>
