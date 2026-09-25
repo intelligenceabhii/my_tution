@@ -1,6 +1,7 @@
-from fastapi import APIRouter, Depends, HTTPException, Query
+import json
+from fastapi import APIRouter, Depends, HTTPException, Query, Response
 from sqlalchemy.orm import Session, joinedload
-from sqlalchemy import func
+from sqlalchemy import func, cast, String
 from typing import Optional
 from pydantic import BaseModel
 from ..database import get_db
@@ -31,8 +32,11 @@ def get_categories(db: Session = Depends(get_db)):
         cats = db.query(SubjectCategoryModel).all()
     return cats
 
+@router.get("/tutors/", response_model=list[TutorBrowseResponse], include_in_schema=False)
 @router.get("/tutors", response_model=list[TutorBrowseResponse])
 def browse_tutors(
+    response: Response,
+    class_level: Optional[str] = None,
     subject: Optional[str] = None,
     board: Optional[str] = None,
     teaching_mode: Optional[str] = None,
@@ -40,6 +44,7 @@ def browse_tutors(
     min_fee: Optional[float] = None,
     max_fee: Optional[float] = None,
     min_rating: Optional[float] = None,
+    min_experience: Optional[int] = Query(None, ge=0),
     search: Optional[str] = None,
     sort: Optional[str] = "rating",
     skip: int = Query(0, ge=0),
@@ -49,7 +54,9 @@ def browse_tutors(
     query = db.query(TutorProfile).filter(TutorProfile.is_approved == True)
 
     if subject:
-        query = query.filter(TutorProfile.subjects.astext.contains(subject))
+        query = query.filter(cast(TutorProfile.subjects, String).contains(subject, autoescape=True))
+    if class_level:
+        query = query.filter(cast(TutorProfile.classes_handled, String).contains(json.dumps(class_level), autoescape=True))
     if board:
         query = query.filter(TutorProfile.board == board)
     if teaching_mode:
@@ -62,16 +69,18 @@ def browse_tutors(
         query = query.filter(TutorProfile.expected_fee <= max_fee)
     if min_rating is not None:
         query = query.filter(TutorProfile.rating >= min_rating)
+    if min_experience is not None:
+        query = query.filter(TutorProfile.experience_years >= min_experience)
     if search:
         query = query.filter(
             TutorProfile.full_name.ilike(f"%{search}%") |
             TutorProfile.bio.ilike(f"%{search}%") |
-            TutorProfile.subjects.astext.ilike(f"%{search}%")
+            cast(TutorProfile.subjects, String).ilike(f"%{search}%")
         )
 
-    if sort == "fee_low":
+    if sort in ("fee_low", "fee_asc"):
         query = query.order_by(TutorProfile.expected_fee.asc())
-    elif sort == "fee_high":
+    elif sort in ("fee_high", "fee_desc"):
         query = query.order_by(TutorProfile.expected_fee.desc())
     elif sort == "experience":
         query = query.order_by(TutorProfile.experience_years.desc())
@@ -81,7 +90,8 @@ def browse_tutors(
         query = query.order_by(TutorProfile.rating.desc())
 
     total = query.count()
-    tutors = query.offset(skip).limit(limit).all()
+    response.headers["X-Total-Count"] = str(total)
+    tutors = query.order_by(TutorProfile.id.asc()).offset(skip).limit(limit).all()
 
     result = []
     for t in tutors:
@@ -206,4 +216,7 @@ def contact_form(form: ContactForm):
     sent = send_contact_email(form.name, form.email, form.subject, form.message)
     if sent:
         return {"message": "Message sent successfully"}
-    return {"message": "Message received (email delivery not configured)"}
+    raise HTTPException(
+        status_code=503,
+        detail="Your message could not be sent. Please try again later or contact us directly.",
+    )

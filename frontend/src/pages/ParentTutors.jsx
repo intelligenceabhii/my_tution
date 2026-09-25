@@ -1,14 +1,22 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import API from '../api/axios'
 
 export default function ParentTutors() {
   const [tutors, setTutors] = useState([])
+  const [total, setTotal] = useState(0)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+  const requestId = useRef(0)
   const [filters, setFilters] = useState({ subject: '', class_level: '', area: '', board: '', teaching_mode: '' })
 
   useEffect(() => { fetchTutors() }, [])
 
-  const fetchTutors = async (f = filters) => {
+  const fetchTutors = async (f = filters, append = false) => {
+    const id = ++requestId.current
+    setLoading(true)
+    setError('')
+    if (!append) setTutors([])
     try {
       const params = new URLSearchParams()
       if (f.subject) params.append('subject', f.subject)
@@ -16,9 +24,17 @@ export default function ParentTutors() {
       if (f.area) params.append('area', f.area)
       if (f.board) params.append('board', f.board)
       if (f.teaching_mode) params.append('teaching_mode', f.teaching_mode)
-      const res = await API.get(`/tutors/?${params.toString()}`)
-      setTutors(res.data)
-    } catch (err) { console.error(err) }
+      params.set('skip', append ? tutors.length : 0)
+      params.set('limit', 20)
+      const res = await API.get('/tutors', { params })
+      if (id !== requestId.current) return
+      setTutors((prev) => append ? [...prev, ...res.data] : res.data)
+      setTotal(Number(res.headers['x-total-count'] ?? res.data.length))
+    } catch (err) {
+      if (id === requestId.current) setError('Unable to load tutors. Please try again.')
+    } finally {
+      if (id === requestId.current) setLoading(false)
+    }
   }
 
   const handleFilterChange = (key, value) => {
@@ -48,7 +64,8 @@ export default function ParentTutors() {
         </div>
       </div>
 
-      {tutors.length === 0 ? (
+      {error && <div role="alert" className="text-red-600 mb-4">{error} <button onClick={() => fetchTutors()} className="underline">Try Again</button></div>}
+      {loading && tutors.length === 0 ? <p role="status">Loading tutors...</p> : error && tutors.length === 0 ? null : tutors.length === 0 ? (
         <div className="text-center py-20 bg-white premium-shadow rounded-2xl border border-gray-100">
           <div className="text-6xl mb-4 text-gray-300">🔍</div>
           <p className="text-xl text-gray-600 font-medium">No tutors found</p>
@@ -84,6 +101,11 @@ export default function ParentTutors() {
             </div>
           ))}
         </div>
+      )}
+      {tutors.length > 0 && tutors.length < total && (
+        <button onClick={() => fetchTutors(filters, true)} disabled={loading} className="btn-primary mt-6 disabled:opacity-50">
+          {loading ? 'Loading...' : `Load More (${total - tutors.length} remaining)`}
+        </button>
       )}
     </div>
   )

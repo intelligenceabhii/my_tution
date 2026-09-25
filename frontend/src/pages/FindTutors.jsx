@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import API from '../api/axios'
 import { useAuth } from '../context/AuthContext'
 
@@ -181,20 +181,22 @@ function TutorCard({ tutor, isFavorited, onToggleFavorite, user }) {
 export default function FindTutors() {
   const { user } = useAuth()
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const requestId = useRef(0)
   const limit = 12
 
   const [filters, setFilters] = useState({
-    search: '', subject: '', board: '', teaching_mode: '', area: '',
+    search: '', subject: searchParams.get('subject') || '', board: '', teaching_mode: '', area: '',
     min_fee: '', max_fee: '', min_rating: 0, sort: 'rating',
   })
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [categories, setCategories] = useState([])
-  const [subjectSearch, setSubjectSearch] = useState('')
+  const [subjectSearch, setSubjectSearch] = useState(searchParams.get('subject') || '')
   const [showSubjectDropdown, setShowSubjectDropdown] = useState(false)
   const subjectRef = useRef(null)
 
   const [tutors, setTutors] = useState([])
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(true)
   const [loadingMore, setLoadingMore] = useState(false)
   const [total, setTotal] = useState(0)
   const [skip, setSkip] = useState(0)
@@ -215,7 +217,14 @@ export default function FindTutors() {
 
   const filteredSubjects = categories.filter((s) => s.toLowerCase().includes(subjectSearch.toLowerCase()))
 
+  useEffect(() => {
+    const subject = searchParams.get('subject') || ''
+    setFilters((prev) => ({ ...prev, subject }))
+    setSubjectSearch(subject)
+  }, [searchParams])
+
   const fetchTutors = useCallback(async (reset = true) => {
+    const id = ++requestId.current
     if (reset) { setSkip(0); setLoading(true); setError('') }
     try {
       const params = {}
@@ -232,24 +241,26 @@ export default function FindTutors() {
       params.skip = reset ? 0 : skip
       params.limit = limit
 
-      const res = await API.get('/tutors/', { params })
+      const res = await API.get('/tutors', { params })
+      if (id !== requestId.current) return
       const data = res.data
       let newTutors = []
       let newTotal = 0
-      if (Array.isArray(data)) { newTutors = data; newTotal = data.length }
+      if (Array.isArray(data)) { newTutors = data; newTotal = Number(res.headers['x-total-count'] ?? data.length) }
       else { newTutors = data.tutors || []; newTotal = data.total || newTutors.length }
 
       if (reset) { setTutors(newTutors); setSkip(newTutors.length) }
       else { setTutors((prev) => [...prev, ...newTutors]); setSkip((prev) => prev + newTutors.length) }
       setTotal(newTotal)
-    } catch (err) { setError(err.response?.data?.detail || 'Failed to load tutors') }
-    finally { setLoading(false); setLoadingMore(false) }
+    } catch (err) { if (id === requestId.current) setError(err.response?.data?.detail || 'Failed to load tutors') }
+    finally { if (id === requestId.current) { setLoading(false); setLoadingMore(false) } }
   }, [filters, skip, limit])
 
   useEffect(() => {
-    setSkip(0); setTutors([]); setTotal(0)
+    ++requestId.current
+    setLoading(true); setLoadingMore(false); setError(''); setSkip(0); setTutors([]); setTotal(0)
     const timer = setTimeout(() => fetchTutors(true), 300)
-    return () => clearTimeout(timer)
+    return () => { clearTimeout(timer); ++requestId.current }
   }, [filters.search, filters.subject, filters.board, filters.teaching_mode, filters.area, filters.min_fee, filters.max_fee, filters.min_rating, filters.sort, filters.experience])
 
   useEffect(() => {
@@ -475,6 +486,8 @@ const sortOptions = [
               <button onClick={clearFilters} className="btn-primary mt-6">Clear All Filters</button>
             </div>
           )}
+
+          {error && tutors.length > 0 && <p role="alert" className="text-red-600 mb-4">{error}</p>}
 
           {tutors.length > 0 && (
             <>

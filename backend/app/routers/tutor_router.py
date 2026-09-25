@@ -13,37 +13,6 @@ router = APIRouter()
 UPLOAD_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "uploads")
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
-@router.get("/", response_model=list[TutorProfileResponse])
-def list_tutors(
-    subject: Optional[str] = None,
-    class_level: Optional[str] = None,
-    area: Optional[str] = None,
-    board: Optional[str] = None,
-    teaching_mode: Optional[str] = None,
-    min_fee: Optional[float] = None,
-    max_fee: Optional[float] = None,
-    approved_only: bool = True,
-    db: Session = Depends(get_db),
-):
-    query = db.query(TutorProfile)
-    if approved_only:
-        query = query.filter(TutorProfile.is_approved == True)
-    if subject:
-        query = query.filter(TutorProfile.subjects.astext.contains(subject))
-    if class_level:
-        query = query.filter(TutorProfile.classes_handled.astext.contains(class_level))
-    if area:
-        query = query.filter(TutorProfile.area_in_ranchi.ilike(f"%{area}%"))
-    if board:
-        query = query.filter(TutorProfile.board == board)
-    if teaching_mode:
-        query = query.filter(TutorProfile.teaching_mode == teaching_mode)
-    if min_fee is not None:
-        query = query.filter(TutorProfile.expected_fee >= min_fee)
-    if max_fee is not None:
-        query = query.filter(TutorProfile.expected_fee <= max_fee)
-    return query.all()
-
 @router.get("/{tutor_id}", response_model=TutorProfileResponse)
 def get_tutor(tutor_id: int, db: Session = Depends(get_db)):
     tutor = db.query(TutorProfile).filter(TutorProfile.id == tutor_id).first()

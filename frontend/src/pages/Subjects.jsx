@@ -152,7 +152,9 @@ export default function Subjects() {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d={stat.icon} />
                     </svg>
                   </div>
-                  <div className={`text-2xl md:text-3xl font-extrabold ${stat.color}`}>{stat.value}</div>
+                  <div className={`text-2xl md:text-3xl font-extrabold ${stat.color}`}>{loading && idx < 2 ? (
+                    <span role="status" aria-label={`Loading ${stat.label.toLowerCase()}`} className="inline-block h-8 w-16 rounded bg-gray-200 animate-pulse" />
+                  ) : stat.value}</div>
                   <div className="text-gray-500 text-xs md:text-sm font-medium mt-1">{stat.label}</div>
                 </div>
               ))}
