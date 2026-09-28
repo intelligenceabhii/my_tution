@@ -51,7 +51,7 @@ def browse_tutors(
     limit: int = Query(20, ge=1, le=100),
     db: Session = Depends(get_db),
 ):
-    query = db.query(TutorProfile).filter(TutorProfile.is_approved == True)
+    query = db.query(TutorProfile).join(User, User.id == TutorProfile.user_id).filter(TutorProfile.is_approved == True, User.is_active == True)
 
     if subject:
         query = query.filter(cast(TutorProfile.subjects, String).contains(subject, autoescape=True))
@@ -117,36 +117,6 @@ def browse_tutors(
             created_at=t.created_at,
         ))
     return result
-
-@router.get("/tutors/{tutor_id}", response_model=TutorBrowseResponse)
-def get_tutor_detail(
-    tutor_id: int,
-    db: Session = Depends(get_db),
-):
-    t = db.query(TutorProfile).filter(TutorProfile.id == tutor_id).first()
-    if not t:
-        raise HTTPException(status_code=404, detail="Tutor not found")
-    review_count = db.query(func.count(Review.id)).filter(Review.tutor_id == t.id).scalar() or 0
-    return TutorBrowseResponse(
-        id=t.id,
-        full_name=t.full_name,
-        qualification=t.qualification,
-        subjects=t.subjects or [],
-        classes_handled=t.classes_handled or [],
-        board=t.board,
-        teaching_mode=t.teaching_mode,
-        area_in_ranchi=t.area_in_ranchi,
-        expected_fee=t.expected_fee,
-        experience_years=t.experience_years or 0,
-        bio=t.bio,
-        photo_path=t.photo_path,
-        is_approved=t.is_approved,
-        rating=t.rating or 0.0,
-        is_verified=getattr(t, 'is_verified', False),
-        offers_free_trial=getattr(t, 'offers_free_trial', False),
-        review_count=review_count,
-        created_at=t.created_at,
-    )
 
 @router.post("/favorites/{tutor_id}")
 def add_favorite(

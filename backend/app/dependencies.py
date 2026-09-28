@@ -7,17 +7,17 @@ from .models import User
 def get_current_user(db: Session = Depends(get_db), user_id: int = Depends(get_current_user_id)) -> User:
     user = db.query(User).filter(User.id == user_id).first()
     if not user or not user.is_active:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Your session is no longer active. Please sign in again.")
     return user
 
 def role_guard(*allowed_roles: str):
-    def checker(role: str = Depends(get_current_user_role)):
-        if role not in allowed_roles:
+    def checker(user: User = Depends(get_current_user)):
+        if user.role not in allowed_roles:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail=f"Access denied. Required role: {'/'.join(allowed_roles)}",
             )
-        return role
+        return user.role
     return checker
 
 parent_only = role_guard("parent")

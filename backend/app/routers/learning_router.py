@@ -69,7 +69,7 @@ def list_sessions(
     )
 
     if current_user.role == "parent":
-        reqs = db.query(ParentRequirement).filter(ParentRequirement.user_id == current_user.id).all()
+        reqs = db.query(ParentRequirement).filter(ParentRequirement.user_id == current_user.id).order_by(ParentRequirement.created_at.desc()).all()
         req_ids = [r.id for r in reqs]
         query = query.filter(LearningSession.requirement_id.in_(req_ids))
     elif current_user.role == "tutor":
@@ -106,10 +106,10 @@ def get_recent_context(
 ):
     if current_user.role != "parent":
         raise HTTPException(status_code=403, detail="Only parents can view learning context")
-    reqs = db.query(ParentRequirement).filter(ParentRequirement.user_id == current_user.id).all()
+    reqs = db.query(ParentRequirement).filter(ParentRequirement.user_id == current_user.id).order_by(ParentRequirement.created_at.desc()).all()
     if not reqs:
-        return {"subjects": [], "recent_topics": [], "child_class": "", "board": ""}
-    req = reqs[0]
+        return {"requirement_id": None, "subjects": [], "recent_topics": [], "child_class": "", "board": ""}
+    req = next((r for r in reqs if r.status == "open"), reqs[0])
     sessions = db.query(LearningSession).filter(
         LearningSession.requirement_id == req.id
     ).order_by(desc(LearningSession.session_date)).limit(5).all()
@@ -119,6 +119,7 @@ def get_recent_context(
         recent_topics.extend(s.topics_covered or [])
 
     return {
+        "requirement_id": req.id,
         "subjects": req.subjects_needed,
         "child_class": req.child_class,
         "board": req.board,
@@ -162,8 +163,8 @@ Answer in a clear, helpful, and age-appropriate manner. Include examples where h
 
     try:
         answer = generate_content(prompt)
-    except Exception as e:
-        answer = f"I couldn't process your question right now. Error: {str(e)}"
+    except Exception:
+        raise HTTPException(status_code=503, detail="MeritAI is temporarily unavailable. Please try again later.")
 
     dq = DoubtQuery(
         requirement_id=doubt.requirement_id,
@@ -195,7 +196,7 @@ def doubt_history(
     query = db.query(DoubtQuery)
 
     if current_user.role == "parent":
-        reqs = db.query(ParentRequirement).filter(ParentRequirement.user_id == current_user.id).all()
+        reqs = db.query(ParentRequirement).filter(ParentRequirement.user_id == current_user.id).order_by(ParentRequirement.created_at.desc()).all()
         req_ids = [r.id for r in reqs]
         query = query.filter(DoubtQuery.requirement_id.in_(req_ids))
     elif current_user.role == "admin":
@@ -238,4 +239,4 @@ def tutor_accepted_requirements(
         "subjects_needed": a.requirement.subjects_needed,
         "board": a.requirement.board,
         "parent_email": a.requirement.parent.email if a.requirement.parent else "Unknown",
-    } for a in apps]
+    } for a in apps if a.requirement]

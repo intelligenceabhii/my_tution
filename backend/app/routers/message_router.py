@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session, joinedload
-from sqlalchemy import func, desc
+from sqlalchemy import func, desc, select, cast
+from sqlalchemy.dialects.postgresql import JSONB
 from typing import Optional
 from ..database import get_db
 from ..models import User, TutorProfile, Conversation, Message
@@ -8,6 +9,24 @@ from ..schemas import ConversationCreate, MessageCreate, MessageResponse
 from ..dependencies import get_current_user
 
 router = APIRouter()
+
+def participant_filter(db, user_id):
+    # JSON.contains on SQLite becomes LIKE: user 1 would match [10, 11].
+    if db.bind.dialect.name == "sqlite":
+        members = func.json_each(Conversation.participant_ids).table_valued("value")
+        return select(1).select_from(members).where(members.c.value == user_id).exists()
+    if db.bind.dialect.name == "postgresql":
+        return cast(Conversation.participant_ids, JSONB).contains([user_id])
+    return func.json_contains(Conversation.participant_ids, str(user_id)) == 1
+
+
+def require_conversation(db, conversation_id, user_id):
+    convo = db.get(Conversation, conversation_id)
+    if not convo:
+        raise HTTPException(status_code=404, detail="Conversation not found")
+    if user_id not in convo.participant_ids:
+        raise HTTPException(status_code=403, detail="Not a participant")
+    return convo
 
 @router.get("/users/search")
 def search_users(
@@ -19,6 +38,7 @@ def search_users(
     users = db.query(User).filter(
         User.email.ilike(f"%{q}%"),
         User.id != current_user.id,
+        User.is_active == True,
     ).limit(limit).all()
     return [{"id": u.id, "email": u.email, "role": u.role} for u in users]
 
@@ -28,7 +48,7 @@ def list_conversations(
     db: Session = Depends(get_db),
 ):
     convos = db.query(Conversation).filter(
-        Conversation.participant_ids.contains(current_user.id)
+        participant_filter(db, current_user.id)
     ).order_by(desc(Conversation.last_message_at)).all()
 
     result = []
@@ -46,13 +66,14 @@ def list_conversations(
             "id": c.id,
             "subject": c.subject,
             "participant_ids": c.participant_ids,
-            "last_message_at": c.last_message_at,
+            "last_message_at": c.last_message_at or (last_msg.created_at if last_msg else None),
             "created_at": c.created_at,
             "other_user_name": other_user.email.split("@")[0] if other_user else "Unknown",
             "other_user_id": other_user.id if other_user else None,
             "last_message": last_msg.message[:100] if last_msg else None,
             "unread_count": unread,
         })
+    result.sort(key=lambda row: (row["last_message_at"] or row["created_at"]).timestamp(), reverse=True)
     return result
 
 @router.post("/conversations")
@@ -61,15 +82,15 @@ def create_conversation(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    receiver = db.query(User).filter(User.id == req.receiver_id).first()
+    receiver = db.query(User).filter(User.id == req.receiver_id, User.is_active == True).first()
     if not receiver:
         raise HTTPException(status_code=404, detail="User not found")
     if receiver.id == current_user.id:
         raise HTTPException(status_code=400, detail="Cannot create conversation with yourself")
 
     existing = db.query(Conversation).filter(
-        Conversation.participant_ids.contains(current_user.id),
-        Conversation.participant_ids.contains(req.receiver_id),
+        participant_filter(db, current_user.id),
+        participant_filter(db, req.receiver_id),
     ).all()
     for c in existing:
         if len(c.participant_ids) == 2 and current_user.id in c.participant_ids and req.receiver_id in c.participant_ids:
@@ -126,7 +147,13 @@ def send_message(
     if current_user.id not in convo.participant_ids:
         raise HTTPException(status_code=403, detail="Not a participant")
 
-    receiver_id = [pid for pid in convo.participant_ids if pid != current_user.id][0]
+    if msg.conversation_id != conversation_id:
+        raise HTTPException(status_code=400, detail="Conversation ID does not match")
+    receivers = [pid for pid in convo.participant_ids if pid != current_user.id]
+    receiver = db.get(User, receivers[0]) if len(receivers) == 1 else None
+    if not receiver or not receiver.is_active:
+        raise HTTPException(status_code=400, detail="This recipient is no longer available")
+    receiver_id = receiver.id
     message = Message(
         conversation_id=conversation_id,
         sender_id=current_user.id,
@@ -134,6 +161,7 @@ def send_message(
         message=msg.message,
     )
     db.add(message)
+    db.flush()
     convo.last_message_at = message.created_at
     db.commit()
     db.refresh(message)
@@ -169,6 +197,7 @@ def mark_conversation_read(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    require_conversation(db, conversation_id, current_user.id)
     db.query(Message).filter(
         Message.conversation_id == conversation_id,
         Message.receiver_id == current_user.id,

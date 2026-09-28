@@ -1,5 +1,6 @@
 import os
 import shutil
+from pydantic import ValidationError
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, status
 from sqlalchemy.orm import Session
 from typing import Optional
@@ -15,7 +16,7 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 @router.get("/{tutor_id}", response_model=TutorProfileResponse)
 def get_tutor(tutor_id: int, db: Session = Depends(get_db)):
-    tutor = db.query(TutorProfile).filter(TutorProfile.id == tutor_id).first()
+    tutor = db.query(TutorProfile).join(User, User.id == TutorProfile.user_id).filter(TutorProfile.id == tutor_id, TutorProfile.is_approved == True, User.is_active == True).first()
     if not tutor:
         raise HTTPException(status_code=404, detail="Tutor not found")
     return tutor
@@ -29,10 +30,14 @@ def update_tutor_profile(
     if current_user.role != "tutor":
         raise HTTPException(status_code=403, detail="Only tutors can update profile")
     tutor = db.query(TutorProfile).filter(TutorProfile.user_id == current_user.id).first()
+    update_data = profile.model_dump(exclude_unset=True)
     if not tutor:
+        try:
+            update_data = TutorProfileCreate.model_validate(update_data).model_dump()
+        except ValidationError as exc:
+            raise HTTPException(status_code=422, detail=exc.errors(include_context=False, include_url=False))
         tutor = TutorProfile(user_id=current_user.id)
         db.add(tutor)
-    update_data = profile.model_dump(exclude_unset=True)
     for key, value in update_data.items():
         setattr(tutor, key, value)
     db.commit()

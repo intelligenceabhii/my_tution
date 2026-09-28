@@ -1,9 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy.orm import Session, joinedload
-from sqlalchemy import func
+from sqlalchemy import func, or_
 from ..database import get_db
-from ..models import User, TutorProfile, ParentRequirement, TutorApplication, Review, SubjectCategoryModel, AIConfig, Conversation, Message
+from ..models import User, TutorProfile, ParentRequirement, TutorApplication, Review, SubjectCategoryModel, AIConfig, Conversation, Message, Favorite, LearningSession, DoubtQuery, Report, AIMatchLog
 from ..schemas import AdminStats, TutorApprovalResponse, UserAdminResponse, AdminApplicationResponse, ApplicationStatusUpdate, AdminRequirementResponse, AdminReviewResponse, SubjectCategory, CategoryCreate, CategoryUpdate, AIConfigResponse, AIConfigUpdate
 from ..auth import hash_password
 from ..dependencies import get_current_user, admin_only
@@ -15,7 +15,7 @@ def pending_tutors(
     db: Session = Depends(get_db),
     _=Depends(admin_only),
 ):
-    tutors = db.query(TutorProfile).filter(TutorProfile.is_approved == False).all()
+    tutors = db.query(TutorProfile).join(User, User.id == TutorProfile.user_id).filter(TutorProfile.is_approved == False, User.is_active == True).all()
     return tutors
 
 @router.put("/tutors/{tutor_id}/approve")
@@ -39,7 +39,7 @@ def get_stats(
     total_users = db.query(User).count()
     total_tutors = db.query(User).filter(User.role == "tutor").count()
     total_parents = db.query(User).filter(User.role == "parent").count()
-    pending_tutors = db.query(TutorProfile).filter(TutorProfile.is_approved == False).count()
+    pending_tutors = db.query(TutorProfile).join(User, User.id == TutorProfile.user_id).filter(TutorProfile.is_approved == False, User.is_active == True).count()
     open_requirements = db.query(ParentRequirement).filter(ParentRequirement.status == "open").count()
     total_applications = db.query(TutorApplication).count()
     return AdminStats(
@@ -49,6 +49,8 @@ def get_stats(
         pending_tutors=pending_tutors,
         open_requirements=open_requirements,
         total_applications=total_applications,
+        total_reviews=db.query(Review).count(),
+        avg_rating=round(db.query(func.avg(Review.rating)).scalar() or 0, 1),
     )
 
 @router.get("/tutors/all", response_model=list[TutorApprovalResponse])
@@ -84,10 +86,13 @@ def deactivate_user(
     user_id: int,
     db: Session = Depends(get_db),
     _=Depends(admin_only),
+    current_user: User = Depends(get_current_user),
 ):
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
+    if user.id == current_user.id:
+        raise HTTPException(status_code=400, detail="You cannot deactivate your own admin account")
     user.is_active = False
     db.commit()
     return {"message": "User deactivated successfully"}
@@ -125,11 +130,11 @@ def decline_tutor(
     if not tutor:
         raise HTTPException(status_code=404, detail="Tutor not found")
     user = db.query(User).filter(User.id == tutor.user_id).first()
-    db.delete(tutor)
+    tutor.is_approved = False
     if user:
         user.is_active = False
     db.commit()
-    return {"message": "Tutor declined and user deactivated"}
+    return {"message": "Tutor declined and user deactivated; teaching history preserved"}
 
 @router.delete("/users/{user_id}")
 def delete_user(
@@ -143,17 +148,32 @@ def delete_user(
     if user.role == "admin":
         raise HTTPException(status_code=400, detail="Cannot delete admin accounts")
 
-    tutor = db.query(TutorProfile).filter(TutorProfile.user_id == user_id).first()
-    if tutor:
-        db.query(Review).filter(Review.tutor_id == tutor.id).delete()
-        db.query(TutorApplication).filter(TutorApplication.tutor_id == tutor.id).delete()
-        db.delete(tutor)
-
-    db.query(ParentRequirement).filter(ParentRequirement.user_id == user_id).delete()
-    db.query(Review).filter(Review.parent_id == user_id).delete()
-    db.delete(user)
+    # Delete dependent rows before their parents, including learning and chat data.
+    tutor_ids = [r.id for r in db.query(TutorProfile).filter_by(user_id=user_id)]
+    req_ids = [r.id for r in db.query(ParentRequirement).filter_by(user_id=user_id)]
+    convo_ids = [c.id for c in db.query(Conversation) if user_id in c.participant_ids]
+    affected_ratings = [r.tutor_id for r in db.query(Review).filter_by(parent_id=user_id)]
+    for model, condition in [
+        (Message, or_(Message.conversation_id.in_(convo_ids), Message.sender_id == user_id, Message.receiver_id == user_id, Message.tutor_profile_id.in_(tutor_ids))),
+        (Conversation, Conversation.id.in_(convo_ids)),
+        (Favorite, or_(Favorite.user_id == user_id, Favorite.tutor_id.in_(tutor_ids))),
+        (Report, or_(Report.reporter_id == user_id, Report.tutor_id.in_(tutor_ids))),
+        (Review, or_(Review.parent_id == user_id, Review.tutor_id.in_(tutor_ids))),
+        (LearningSession, or_(LearningSession.requirement_id.in_(req_ids), LearningSession.tutor_id.in_(tutor_ids))),
+        (DoubtQuery, or_(DoubtQuery.user_id == user_id, DoubtQuery.requirement_id.in_(req_ids))),
+        (AIMatchLog, AIMatchLog.requirement_id.in_(req_ids)),
+        (TutorApplication, or_(TutorApplication.tutor_id.in_(tutor_ids), TutorApplication.requirement_id.in_(req_ids))),
+        (ParentRequirement, ParentRequirement.id.in_(req_ids)),
+        (TutorProfile, TutorProfile.id.in_(tutor_ids)),
+    ]:
+        db.query(model).filter(condition).delete(synchronize_session=False)
+    email = user.email
+    db.query(User).filter_by(id=user_id).delete(synchronize_session=False)
+    for tutor_id in set(affected_ratings) - set(tutor_ids):
+        rating = db.query(func.avg(Review.rating)).filter_by(tutor_id=tutor_id).scalar() or 0
+        db.query(TutorProfile).filter_by(id=tutor_id).update({"rating": round(rating, 1)})
     db.commit()
-    return {"message": f"User {user.email} deleted permanently"}
+    return {"message": f"User {email} deleted permanently"}
 
 @router.get("/applications", response_model=list[AdminApplicationResponse])
 def list_applications(
@@ -365,11 +385,12 @@ def admin_list_conversations(
             "id": c.id,
             "participant_ids": c.participant_ids,
             "participant_names": [user_names.get(pid, "Unknown") for pid in c.participant_ids],
-            "last_message_at": c.last_message_at,
+            "last_message_at": c.last_message_at or (last_msg.created_at if last_msg else None),
             "message_count": msg_count,
             "last_message_preview": last_msg.message[:100] if last_msg else None,
             "created_at": c.created_at,
         })
+    result.sort(key=lambda row: (row["last_message_at"] or row["created_at"]).timestamp(), reverse=True)
     return result
 
 @router.get("/conversations/{conversation_id}/messages")

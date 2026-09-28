@@ -60,6 +60,7 @@ class UserJourneyTests(unittest.TestCase):
         self.assertEqual(self.request('GET', '/tutors'), [])
         self.request('PUT', f'/admin/tutors/{tutor_id}/approve', admin)
         self.assertEqual(self.request('GET', '/tutors')[0]['id'], tutor_id)
+        self.assertEqual(self.request('GET', f'/tutors/{tutor_id}')['id'], tutor_id)
         req = self.request('POST', '/parents/requirements', parent, {
             'child_class': '10', 'subjects_needed': ['Mathematics'], 'board': 'CBSE',
             'teaching_mode': 'online', 'budget_per_month': 600})
@@ -80,3 +81,47 @@ class UserJourneyTests(unittest.TestCase):
             self.assertEqual(result['matches'][0]['tutor_id'], tutor_id)
         self.request('PUT', f'/parents/requirements/{req_id}/close', parent)
         self.assertEqual(self.request('GET', '/parents/requirements/mine', parent)[0]['status'], 'closed')
+
+    def register_role(self, role):
+        return self.request('POST', '/auth/register', data={
+            'email': role + '@example.invalid', 'password': 'TestPassword123!', 'role': role})['access_token']
+
+    def test_invalid_requirements_are_rejected_without_saving(self):
+        token = self.register_role('parent')
+        valid = {'child_class': '10', 'subjects_needed': ['Mathematics'],
+                 'board': 'CBSE', 'teaching_mode': 'online', 'budget_per_month': 0}
+        for patch_data in ({'subjects_needed': []}, {'subjects_needed': ['  ']},
+                           {'budget_per_month': -1}, {'budget_per_month': 'Infinity'},
+                           {'child_class': ' '}, {'subjects_needed': None}):
+            with self.subTest(patch_data=patch_data):
+                self.request('POST', '/parents/requirements', token, {**valid, **patch_data}, status=422)
+        self.assertEqual(self.request('GET', '/parents/requirements/mine', token), [])
+        created = self.request('POST', '/parents/requirements', token, valid)
+        self.assertEqual(created['budget_per_month'], 0)
+
+    def test_profile_validation_partial_updates_and_private_access(self):
+        token = self.register_role('tutor')
+        # An incomplete first save must not create a broken database record.
+        self.request('PUT', '/tutors/profile', token, {'bio': 'Incomplete'}, status=422)
+        self.request('GET', '/tutors/profile/mine', token, status=404)
+        valid = {'full_name': 'Test Tutor', 'qualification': 'BSc', 'subjects': ['Mathematics'],
+                 'classes_handled': ['10'], 'board': 'CBSE', 'teaching_mode': 'online',
+                 'expected_fee': 0, 'experience_years': 0}
+        profile = self.request('PUT', '/tutors/profile', token, valid)
+        for patch_data in ({'subjects': []}, {'subjects': ['  ']}, {'subjects': None},
+                           {'classes_handled': []}, {'classes_handled': [' ']},
+                           {'expected_fee': -1}, {'expected_fee': 'NaN'},
+                           {'experience_years': -1}, {'full_name': ' '}, {'full_name': None}):
+            with self.subTest(patch_data=patch_data):
+                self.request('PUT', '/tutors/profile', token, patch_data, status=422)
+        mine = self.request('GET', '/tutors/profile/mine', token)
+        self.assertEqual(mine['subjects'], ['Mathematics'])
+        self.assertEqual(mine['expected_fee'], 0)
+        self.request('GET', f"/tutors/{profile['id']}", status=404)
+        self.request('GET', f"/tutors/{profile['id']}/", status=404)
+        # Owners edit pending profiles through their authenticated private endpoint.
+        self.assertEqual(mine['id'], profile['id'])
+        updated = self.request('PUT', '/tutors/profile', token, {'bio': 'Updated bio', 'expected_fee': None})
+        self.assertEqual(updated['full_name'], 'Test Tutor')
+        self.assertEqual(updated['bio'], 'Updated bio')
+        self.assertIsNone(updated['expected_fee'])

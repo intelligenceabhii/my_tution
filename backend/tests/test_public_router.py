@@ -10,7 +10,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 from sqlalchemy.pool import StaticPool
 from app.database import Base, get_db
-from app.models import TutorProfile
+from app.models import TutorProfile, User
 from app.main import app
 
 
@@ -19,12 +19,13 @@ class PublicRouterTests(unittest.TestCase):
         self.engine = create_engine('sqlite://', connect_args={'check_same_thread': False}, poolclass=StaticPool)
         Base.metadata.create_all(self.engine)
         with Session(self.engine) as db:
-            for name, subject, fee, experience, approved in [
+            for user_id, (name, subject, fee, experience, approved) in enumerate([
                 ('Alice', 'Mathematics', 600, 2, True),
                 ('Bob', 'Physics', 400, 7, True),
                 ('Hidden', 'Mathematics', 100, 10, False),
-            ]:
-                db.add(TutorProfile(user_id=len(db.new) + 1, full_name=name,
+            ], start=1):
+                db.add(User(id=user_id, email=f'{name.lower()}@example.invalid', password_hash='unused', role='tutor', is_active=True))
+                db.add(TutorProfile(user_id=user_id, full_name=name,
                     qualification='BSc', subjects=[subject], classes_handled=['10'],
                     board='CBSE', teaching_mode='online', expected_fee=fee,
                     experience_years=experience, is_approved=approved))

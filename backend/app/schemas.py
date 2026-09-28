@@ -1,5 +1,5 @@
-from pydantic import BaseModel, EmailStr
-from typing import Optional, List
+from pydantic import BaseModel, EmailStr, Field, StringConstraints, field_validator
+from typing import Optional, List, Annotated
 from datetime import datetime
 
 # --- Auth Schemas ---
@@ -32,16 +32,19 @@ class UserResponse(BaseModel):
 
 # --- Tutor Profile Schemas ---
 
+NonBlankText = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1)]
+NonEmptyTextList = Annotated[List[NonBlankText], Field(min_length=1)]
+
 class TutorProfileCreate(BaseModel):
-    full_name: str
-    qualification: str
-    subjects: List[str]
-    classes_handled: List[str]
-    board: str
-    teaching_mode: str
+    full_name: NonBlankText
+    qualification: NonBlankText
+    subjects: NonEmptyTextList
+    classes_handled: NonEmptyTextList
+    board: NonBlankText
+    teaching_mode: NonBlankText
     area_in_ranchi: Optional[str] = None
-    expected_fee: Optional[float] = None
-    experience_years: Optional[int] = 0
+    expected_fee: Optional[float] = Field(default=None, ge=0, allow_inf_nan=False)
+    experience_years: Optional[int] = Field(default=0, ge=0)
     bio: Optional[str] = None
 
 class TutorProfileResponse(BaseModel):
@@ -67,27 +70,34 @@ class TutorProfileResponse(BaseModel):
         from_attributes = True
 
 class TutorProfileUpdate(BaseModel):
-    full_name: Optional[str] = None
-    qualification: Optional[str] = None
-    subjects: Optional[List[str]] = None
-    classes_handled: Optional[List[str]] = None
-    board: Optional[str] = None
-    teaching_mode: Optional[str] = None
+    full_name: Optional[NonBlankText] = None
+    qualification: Optional[NonBlankText] = None
+    subjects: Optional[NonEmptyTextList] = None
+    classes_handled: Optional[NonEmptyTextList] = None
+    board: Optional[NonBlankText] = None
+    teaching_mode: Optional[NonBlankText] = None
     area_in_ranchi: Optional[str] = None
-    expected_fee: Optional[float] = None
-    experience_years: Optional[int] = None
+    expected_fee: Optional[float] = Field(default=None, ge=0, allow_inf_nan=False)
+    experience_years: Optional[int] = Field(default=None, ge=0)
     bio: Optional[str] = None
+
+    @field_validator('full_name', 'qualification', 'subjects', 'classes_handled', 'board', 'teaching_mode')
+    @classmethod
+    def reject_null_required_fields(cls, value):
+        if value is None:
+            raise ValueError('This field cannot be null')
+        return value
 
 # --- Parent Requirement Schemas ---
 
 class RequirementCreate(BaseModel):
-    child_class: str
-    subjects_needed: List[str]
-    board: str
+    child_class: NonBlankText
+    subjects_needed: NonEmptyTextList
+    board: NonBlankText
     preferred_timing: Optional[str] = None
     location_area: Optional[str] = None
-    budget_per_month: Optional[float] = None
-    teaching_mode: str
+    budget_per_month: Optional[float] = Field(default=None, ge=0, allow_inf_nan=False)
+    teaching_mode: NonBlankText
     special_notes: Optional[str] = None
 
 class RequirementResponse(BaseModel):
@@ -215,7 +225,7 @@ class ConversationResponse(BaseModel):
 
 class MessageCreate(BaseModel):
     conversation_id: int
-    message: str
+    message: NonBlankText
 
 
 class MessageResponse(BaseModel):
@@ -257,10 +267,10 @@ class CategoryUpdate(BaseModel):
 
 class LearningSessionCreate(BaseModel):
     requirement_id: int
-    subject: str
-    topics_covered: List[str]
+    subject: NonBlankText
+    topics_covered: NonEmptyTextList
     notes: Optional[str] = None
-    duration_minutes: Optional[int] = None
+    duration_minutes: Optional[int] = Field(default=None, gt=0)
 
 class LearningSessionResponse(BaseModel):
     id: int
@@ -280,7 +290,7 @@ class LearningSessionResponse(BaseModel):
 
 class DoubtRequest(BaseModel):
     requirement_id: int
-    question: str
+    question: NonBlankText
     subject: Optional[str] = None
 
 class DoubtResponse(BaseModel):
@@ -335,6 +345,8 @@ class AdminStats(BaseModel):
     pending_tutors: int
     open_requirements: int
     total_applications: int
+    total_reviews: int = 0
+    avg_rating: float = 0
 
 class TutorApprovalResponse(BaseModel):
     id: int
