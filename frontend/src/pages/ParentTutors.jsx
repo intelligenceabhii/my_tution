@@ -46,7 +46,7 @@ export default function ParentTutors() {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 animate-fade-in">
       <div className="mb-8">
-        <h1 className="text-3xl font-extrabold text-primary">Find Tutors</h1>
+        <h1 className="text-3xl font-semibold text-primary">Find Tutors</h1>
         <p className="text-gray-500 text-sm mt-1">Browse available tutors for your requirement</p>
       </div>
 
@@ -55,10 +55,10 @@ export default function ParentTutors() {
           <input placeholder="Subject" value={filters.subject} onChange={(e) => handleFilterChange('subject', e.target.value)} className="input-field" />
           <input placeholder="Class (e.g. 10, Nursery, NEET)" value={filters.class_level} onChange={(e) => handleFilterChange('class_level', e.target.value)} className="input-field" />
           <input placeholder="Area" value={filters.area} onChange={(e) => handleFilterChange('area', e.target.value)} className="input-field" />
-          <select value={filters.board} onChange={(e) => handleFilterChange('board', e.target.value)} className="input-field cursor-pointer">
+          <select aria-label="Board" value={filters.board} onChange={(e) => handleFilterChange('board', e.target.value)} className="input-field cursor-pointer">
             <option value="">All Boards</option><option value="JAC">JAC</option><option value="CBSE">CBSE</option><option value="ICSE">ICSE</option>
           </select>
-          <select value={filters.teaching_mode} onChange={(e) => handleFilterChange('teaching_mode', e.target.value)} className="input-field cursor-pointer">
+          <select aria-label="Teaching mode" value={filters.teaching_mode} onChange={(e) => handleFilterChange('teaching_mode', e.target.value)} className="input-field cursor-pointer">
             <option value="">All Modes</option><option value="home">Home</option><option value="online">Online</option><option value="both">Both</option>
           </select>
         </div>
@@ -74,13 +74,13 @@ export default function ParentTutors() {
       ) : (
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
           {tutors.map((tutor) => (
-            <div key={tutor.id} className="bg-white premium-shadow rounded-2xl hover:shadow-xl transition-all duration-300 hover:-translate-y-1 p-6 border border-gray-100 group">
+            <div key={tutor.id} className="bg-white premium-shadow rounded-2xl hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 p-6 border border-gray-100 group">
               <div className="flex items-start gap-4">
-                <div className="w-16 h-16 bg-gradient-to-br from-primary to-primary-light text-gold rounded-full flex items-center justify-center text-2xl font-bold shrink-0 shadow-md ring-2 ring-primary/10">
+                <div className="w-16 h-16 bg-gradient-to-br from-primary to-primary-light text-gold rounded-full flex items-center justify-center text-2xl font-semibold shrink-0 shadow-md ring-2 ring-primary/10">
                   {tutor.full_name?.[0] || 'T'}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h3 className="font-bold text-lg text-primary truncate">{tutor.full_name}</h3>
+                  <h3 className="font-semibold text-lg text-primary truncate">{tutor.full_name}</h3>
                   <p className="text-sm text-gray-600 truncate">{tutor.qualification}</p>
                   <div className="flex items-center gap-1 mt-1">
                     <span className="text-gold text-sm">{'★'.repeat(Math.round(tutor.rating || 0))}{'☆'.repeat(5 - Math.round(tutor.rating || 0))}</span>
@@ -92,7 +92,7 @@ export default function ParentTutors() {
                 {(tutor.subjects || []).map((s) => <span key={s} className="bg-primary/5 text-primary px-2.5 py-1 rounded-full text-xs font-medium border border-primary/10">{s}</span>)}
               </div>
               <p className="text-sm text-gray-600 mt-2">{tutor.experience_years} years exp | {tutor.board} | {tutor.teaching_mode}</p>
-              <p className="text-sm text-gray-600">{tutor.area_in_ranchi ? `📍 ${tutor.area_in_ranchi}` : ''} | <span className="font-semibold text-primary">₹{tutor.expected_fee || 'Neg'}/mo</span></p>
+              <p className="text-sm text-gray-600">{tutor.area_in_ranchi ? `📍 ${tutor.area_in_ranchi}` : ''} | <span className="font-semibold text-primary">₹{tutor.expected_fee ?? 'Neg'}/mo</span></p>
               {tutor.bio && <p className="text-sm text-gray-500 mt-2 line-clamp-2">{tutor.bio}</p>}
               <Link to={`/tutor/profile/${tutor.id}`} className="mt-4 inline-flex items-center justify-center gap-2 bg-gradient-to-r from-primary to-primary-light text-white px-4 py-2.5 rounded-xl text-sm font-semibold hover:shadow-lg transition w-full">
                 View Profile

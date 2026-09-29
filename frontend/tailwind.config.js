@@ -7,17 +7,17 @@ export default {
   theme: {
     extend: {
       colors: {
-        primary: '#1A237E',
-        'primary-dark': '#0D1452',
-        'primary-light': '#2A3EB8',
-        gold: '#FFD700',
-        'gold-light': '#FFE44D',
-        'gold-dark': '#CCA800',
-        surface: '#F8F9FC',
-        'surface-hover': '#EEF0F7',
+        primary: '#087C9B',
+        'primary-dark': '#153846',
+        'primary-light': '#076B88',
+        gold: '#D9F1F6',
+        'gold-light': '#EAF9FD',
+        'gold-dark': '#116F89',
+        surface: '#F7FAFC',
+        'surface-hover': '#EAF5F9',
       },
       fontFamily: {
-        poppins: ['Poppins', 'sans-serif'],
+        poppins: ['Inter', 'sans-serif'],
       },
       boxShadow: {
         'card': '0 2px 8px rgba(26, 35, 126, 0.08)',

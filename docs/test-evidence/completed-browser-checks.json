@@ -1,0 +1,161 @@
+{
+  "environment": "Isolated local API and database; real browser/authentication; AI response stub and email disabled",
+  "checks": [
+    {
+      "name": "parent login",
+      "pass": true
+    },
+    {
+      "name": "tutor login",
+      "pass": true
+    },
+    {
+      "name": "admin login",
+      "pass": true
+    },
+    {
+      "name": "Profile favorites survive reload",
+      "pass": true
+    },
+    {
+      "name": "Profile message delivers and opens inbox",
+      "pass": true
+    },
+    {
+      "name": "Tutor receives; open parent chat refreshes reply",
+      "pass": true
+    },
+    {
+      "name": "Rapid Enter sends only once",
+      "pass": true
+    },
+    {
+      "name": "Composer selection keeps message form open",
+      "pass": true
+    },
+    {
+      "name": "Chat load failure is visible and retry recovers",
+      "pass": true
+    },
+    {
+      "name": "Parent accepts tutor application",
+      "pass": true
+    },
+    {
+      "name": "Parent asks before first lesson; history persists (provider stub)",
+      "pass": true
+    },
+    {
+      "name": "Tutor logs lesson; parent reads session",
+      "pass": true
+    },
+    {
+      "name": "Review and report submission",
+      "pass": true
+    },
+    {
+      "name": "Photo upload",
+      "pass": true
+    },
+    {
+      "name": "Admin tabs and chat transcript load",
+      "pass": true
+    },
+    {
+      "name": "Admin category create edit delete",
+      "pass": true
+    },
+    {
+      "name": "Admin API outage shown and retry recovers",
+      "pass": true
+    },
+    {
+      "name": "AI config save persists and missing provider key is reported",
+      "pass": true
+    },
+    {
+      "name": "Every admin tab fits 320 390 768 1440",
+      "pass": true
+    },
+    {
+      "name": "Admin real review average",
+      "pass": true
+    },
+    {
+      "name": "Disable tutor removes discovery and invalidates old token; reactivate works",
+      "pass": true
+    },
+    {
+      "name": "Photo visible on profile and dashboard",
+      "pass": true
+    },
+    {
+      "name": "Contact failure is visible and draft preserved",
+      "pass": true
+    },
+    {
+      "name": "Parent closes requirement from own dashboard",
+      "pass": true
+    },
+    {
+      "name": "Admin deletes parent with messages reviews sessions and applications",
+      "pass": true
+    },
+    {
+      "name": "Admin decline keeps history and removes public profile",
+      "pass": true
+    },
+    {
+      "name": "Admin creation shows success and new administrator logs in",
+      "pass": true
+    },
+    {
+      "name": "Admin messages icon and direct route reach moderation tab",
+      "pass": true
+    },
+    {
+      "name": "Self-deactivation not offered in UI and denied by server",
+      "pass": true
+    },
+    {
+      "name": "Main local app health and public API still respond",
+      "pass": true
+    },
+    {
+      "name": "parent mobile registration",
+      "pass": true
+    },
+    {
+      "name": "tutor mobile registration",
+      "pass": true
+    },
+    {
+      "name": "Mobile compose and reply without reload",
+      "pass": true
+    },
+    {
+      "name": "Active chat input fits 320 390 768 1440",
+      "pass": true
+    },
+    {
+      "name": "Failed send keeps draft and retry succeeds",
+      "pass": true
+    },
+    {
+      "name": "Mobile back navigation and partial email never auto-sends",
+      "pass": true
+    },
+    {
+      "name": "Parent cannot open admin page",
+      "pass": true
+    },
+    {
+      "name": "Admin transcript failure then refresh recovers",
+      "pass": true
+    },
+    {
+      "name": "Admin mobile same-page link closes menu and logout works",
+      "pass": true
+    }
+  ]
+}

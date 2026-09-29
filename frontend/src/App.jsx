@@ -1,7 +1,9 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { useEffect } from 'react'
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import Navbar from './components/Navbar'
 import Footer from './components/Footer'
+import WorkspaceBar from './components/ui/WorkspaceBar'
 import Landing from './pages/Landing'
 import Login from './pages/Login'
 import Register from './pages/Register'
@@ -48,10 +50,19 @@ function ProtectedRoute({ children, roles }) {
 
 function AppRoutes() {
   const { user } = useAuth()
+  const location = useLocation()
+  useEffect(() => {
+    if (location.hash) {
+      const timer = setTimeout(() => document.getElementById(location.hash.slice(1))?.scrollIntoView(), 100)
+      return () => clearTimeout(timer)
+    }
+    window.scrollTo(0, 0)
+  }, [location.pathname, location.hash])
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
-      <main className="flex-1">
+      <main id="main-content" className={`flex-1 ${location.pathname === '/' ? 'marketing-page' : 'app-page'} ${['/login', '/register'].includes(location.pathname) ? 'auth-page' : ''}`} tabIndex={-1}>
+        {user && ['/parent/dashboard','/parent/tutors','/tutor/dashboard','/admin','/learning','/messages','/favorites'].includes(location.pathname) && <WorkspaceBar role={user.role}/>}
         <Routes>
           <Route path="/" element={<Landing />} />
           <Route path="/login" element={user ? <Navigate to={getDashboard(user.role)} /> : <Login />} />
@@ -64,8 +75,8 @@ function AppRoutes() {
           <Route path="/ai-match/:reqId" element={<ProtectedRoute roles={['parent', 'admin']}><AIMatch /></ProtectedRoute>} />
           <Route path="/find-tutors" element={<FindTutors />} />
           <Route path="/subjects" element={<Subjects />} />
-          <Route path="/favorites" element={<ProtectedRoute roles={['parent', 'tutor']}><Favorites /></ProtectedRoute>} />
-          <Route path="/messages" element={<ProtectedRoute roles={['parent', 'tutor']}><Messages /></ProtectedRoute>} />
+          <Route path="/favorites" element={<ProtectedRoute roles={['parent']}><Favorites /></ProtectedRoute>} />
+          <Route path="/messages" element={user?.role === 'admin' ? <Navigate to="/admin?tab=messages" replace /> : <ProtectedRoute roles={['parent', 'tutor']}><Messages /></ProtectedRoute>} />
           <Route path="/about-us" element={<AboutUs />} />
           <Route path="/contact" element={<Contact />} />
           <Route path="/support" element={<Support />} />

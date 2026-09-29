@@ -1,0 +1,41 @@
+{
+  "results": [
+    {
+      "name": "parent mobile registration",
+      "pass": true
+    },
+    {
+      "name": "tutor mobile registration",
+      "pass": true
+    },
+    {
+      "name": "Mobile compose and reply without reload",
+      "pass": true
+    },
+    {
+      "name": "Active chat input fits 320 390 768 1440",
+      "pass": true
+    },
+    {
+      "name": "Failed send keeps draft and retry succeeds",
+      "pass": true
+    },
+    {
+      "name": "Mobile back navigation and partial email never auto-sends",
+      "pass": true
+    },
+    {
+      "name": "Parent cannot open admin page",
+      "pass": true
+    },
+    {
+      "name": "Admin transcript failure then refresh recovers",
+      "pass": true
+    },
+    {
+      "name": "Admin mobile same-page link closes menu and logout works",
+      "pass": true
+    }
+  ],
+  "errors": []
+}

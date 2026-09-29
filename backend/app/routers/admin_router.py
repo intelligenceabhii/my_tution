@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import func, or_
 from ..database import get_db
@@ -68,6 +68,65 @@ def list_users(
     users = db.query(User).options(joinedload(User.tutor_profile)).order_by(User.created_at.desc()).all()
     return users
 
+@router.get("/users/{user_id}")
+def get_user_details(
+    user_id: int,
+    db: Session = Depends(get_db),
+    _=Depends(admin_only),
+):
+    user = db.query(User).options(joinedload(User.tutor_profile)).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    requirements = db.query(ParentRequirement).filter(ParentRequirement.user_id == user.id).order_by(ParentRequirement.created_at.desc()).all()
+    tutor = user.tutor_profile
+    tutor_applications = db.query(TutorApplication).filter(TutorApplication.tutor_id == tutor.id).count() if tutor else 0
+    tutor_reviews = db.query(Review).filter(Review.tutor_id == tutor.id).count() if tutor else 0
+    return {
+        "id": user.id,
+        "email": user.email,
+        "role": user.role,
+        "is_active": user.is_active,
+        "created_at": user.created_at,
+        "activity": {
+            "requirements": len(requirements),
+            "applications": tutor_applications,
+            "reviews": tutor_reviews,
+        },
+        "tutor_profile": None if not tutor else {
+            "id": tutor.id,
+            "full_name": tutor.full_name,
+            "qualification": tutor.qualification,
+            "subjects": tutor.subjects,
+            "classes_handled": tutor.classes_handled,
+            "board": tutor.board,
+            "teaching_mode": tutor.teaching_mode,
+            "area_in_ranchi": tutor.area_in_ranchi,
+            "expected_fee": tutor.expected_fee,
+            "experience_years": tutor.experience_years,
+            "bio": tutor.bio,
+            "photo_path": tutor.photo_path,
+            "certificate_path": tutor.certificate_path,
+            "is_approved": tutor.is_approved,
+            "is_verified": tutor.is_verified,
+            "offers_free_trial": tutor.offers_free_trial,
+            "rating": tutor.rating,
+            "created_at": tutor.created_at,
+        },
+        "requirements": [{
+            "id": requirement.id,
+            "child_class": requirement.child_class,
+            "subjects_needed": requirement.subjects_needed,
+            "board": requirement.board,
+            "teaching_mode": requirement.teaching_mode,
+            "location_area": requirement.location_area,
+            "preferred_timing": requirement.preferred_timing,
+            "budget_per_month": requirement.budget_per_month,
+            "status": requirement.status,
+            "created_at": requirement.created_at,
+        } for requirement in requirements[:10]],
+    }
+
 @router.put("/users/{user_id}/activate")
 def activate_user(
     user_id: int,
@@ -99,7 +158,24 @@ def deactivate_user(
 
 class CreateAdminRequest(BaseModel):
     email: str
-    password: str
+    password: str = Field(min_length=8, max_length=128)
+
+class AdminPasswordResetRequest(BaseModel):
+    new_password: str = Field(min_length=8, max_length=128)
+
+@router.put("/users/{user_id}/password")
+def reset_user_password(
+    user_id: int,
+    req: AdminPasswordResetRequest,
+    db: Session = Depends(get_db),
+    _=Depends(admin_only),
+):
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    user.password_hash = hash_password(req.new_password)
+    db.commit()
+    return {"message": f"Password updated for {user.email}"}
 
 @router.post("/admins")
 def create_admin(

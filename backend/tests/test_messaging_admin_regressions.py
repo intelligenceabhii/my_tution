@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import text
 import test_user_journey as journey
 from app.models import User, TutorProfile, ParentRequirement, TutorApplication, Conversation, Message, Favorite, Review, LearningSession, DoubtQuery, Report
+from app.auth import verify_password
 
 class MessagingAdminTests(unittest.TestCase):
     setUp = journey.UserJourneyTests.setUp
@@ -49,11 +50,58 @@ class MessagingAdminTests(unittest.TestCase):
         self.assertTrue(self.request('GET',f'/conversations/{c}/messages',p)[0]['is_read'])
         self.assertEqual(self.request('POST','/conversations',t,{'receiver_id':parent['user_id']})['id'],c)
 
+    def test_conversation_history_survives_status_change_and_relogin(self):
+        parent,tutor,profile,req=self.fixture()
+        parent_token=parent['access_token'];tutor_token=tutor['access_token']
+        conversation=self.request('POST','/conversations',parent_token,{'receiver_id':tutor['user_id'],'subject':'Tuition discussion'})
+        self.request('POST',f"/conversations/{conversation['id']}/messages",parent_token,{'conversation_id':conversation['id'],'message':'Are you available on weekdays?'})
+        self.request('POST',f"/conversations/{conversation['id']}/messages",tutor_token,{'conversation_id':conversation['id'],'message':'Yes, after 5 PM.'})
+        parent_token=self.request('POST','/auth/login',data={'email':'parent@example.invalid','password':'TestPassword123!'})['access_token']
+        tutor_token=self.request('POST','/auth/login',data={'email':'tutor@example.invalid','password':'TestPassword123!'})['access_token']
+        for token in (parent_token,tutor_token):
+            listed=self.request('GET','/conversations',token)
+            self.assertEqual([item['id'] for item in listed],[conversation['id']])
+            history=self.request('GET',f"/conversations/{conversation['id']}/messages",token)
+            self.assertEqual([message['message'] for message in history],['Are you available on weekdays?','Yes, after 5 PM.'])
+        reused=self.request('POST','/conversations',tutor_token,{'receiver_id':parent['user_id']})
+        self.assertEqual(reused,{'id':conversation['id'],'existing':True})
+        with Session(self.engine) as db:
+            self.assertEqual(db.query(Conversation).count(),1)
+            self.assertEqual(db.query(Message).count(),2)
+
     def test_disabled_admin_and_self_deactivation(self):
         admin=self.admin()
         self.request('PUT','/admin/users/1/deactivate',admin,status=400)
         with Session(self.engine) as db:db.get(User,1).is_active=False;db.commit()
         self.request('GET','/admin/stats',admin,status=401)
+
+    def test_admin_can_reset_user_password(self):
+        parent=self.account('parent');admin=self.admin();user_id=parent['user_id']
+        self.request('PUT',f'/admin/users/{user_id}/password',parent['access_token'],{'new_password':'NewPassword2026!'},status=403)
+        self.request('PUT',f'/admin/users/{user_id}/password',admin,{'new_password':'short'},status=422)
+        result=self.request('PUT',f'/admin/users/{user_id}/password',admin,{'new_password':'NewPassword2026!'})
+        self.assertIn('Password updated',result['message'])
+        self.request('POST','/auth/login',data={'email':'parent@example.invalid','password':'TestPassword123!','role':'parent'},status=401)
+        login=self.request('POST','/auth/login',data={'email':'parent@example.invalid','password':'NewPassword2026!','role':'parent'})
+        self.assertTrue(login['access_token'])
+        with Session(self.engine) as db:
+            user=db.get(User,user_id)
+            self.assertNotEqual(user.password_hash,'NewPassword2026!')
+            self.assertTrue(verify_password('NewPassword2026!',user.password_hash))
+        self.request('PUT','/admin/users/999/password',admin,{'new_password':'NewPassword2026!'},status=404)
+
+    def test_admin_can_view_role_specific_user_details(self):
+        parent,tutor,profile,req=self.fixture();admin=self.admin()
+        self.request('GET',f"/admin/users/{parent['user_id']}",parent['access_token'],status=403)
+        parent_details=self.request('GET',f"/admin/users/{parent['user_id']}",admin)
+        self.assertEqual(parent_details['email'],'parent@example.invalid')
+        self.assertEqual(parent_details['activity']['requirements'],1)
+        self.assertEqual(parent_details['requirements'][0]['subjects_needed'],['Mathematics'])
+        self.assertNotIn('password_hash',parent_details)
+        tutor_details=self.request('GET',f"/admin/users/{tutor['user_id']}",admin)
+        self.assertEqual(tutor_details['tutor_profile']['full_name'],'Audit Teacher')
+        self.assertEqual(tutor_details['activity']['applications'],1)
+        self.request('GET','/admin/users/999',admin,status=404)
 
     def test_context_before_sessions_and_provider_error(self):
         parent,tutor,profile,req=self.fixture();p=parent['access_token']

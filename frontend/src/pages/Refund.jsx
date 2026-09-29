@@ -13,7 +13,7 @@ const sections = [
 
 export default function Refund() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-50 relative overflow-hidden">
+    <div className="min-h-screen bg-surface relative overflow-hidden">
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute -top-20 -left-20 w-[500px] h-[500px] bg-gradient-to-br from-primary/[0.03] to-transparent rounded-full blur-3xl" />
         <div className="absolute -bottom-20 -right-20 w-[500px] h-[500px] bg-gradient-to-tl from-gold/[0.03] to-transparent rounded-full blur-3xl" />
@@ -21,8 +21,8 @@ export default function Refund() {
 
       <div className="relative max-w-4xl mx-auto px-4 sm:px-6 py-16 md:py-24">
         <div className="text-center mb-12 animate-slide-up">
-          <span className="inline-block text-xs font-bold text-primary/70 bg-primary/[0.06] px-4 py-1.5 rounded-full tracking-wider uppercase mb-4">Legal</span>
-          <h1 className="text-4xl md:text-5xl font-extrabold text-primary mb-4">Refund <span className="text-gold">Policy</span></h1>
+          <span className="inline-block text-xs font-semibold text-primary/70 bg-primary/[0.06] px-4 py-1.5 rounded-full tracking-wider uppercase mb-4">Legal</span>
+          <h1 className="text-4xl md:text-5xl font-semibold text-primary mb-4">Refund <span className="text-gold">Policy</span></h1>
           <p className="text-gray-500 text-sm">Last updated: June 2026</p>
         </div>
 
@@ -30,7 +30,7 @@ export default function Refund() {
           <div className="prose max-w-none space-y-8">
             {sections.map((s) => (
               <div key={s.title}>
-                <h2 className="text-lg font-bold text-primary mb-2">{s.title}</h2>
+                <h2 className="text-lg font-semibold text-primary mb-2">{s.title}</h2>
                 <p className="text-gray-600 leading-relaxed">{s.content}</p>
               </div>
             ))}

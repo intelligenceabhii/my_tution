@@ -43,7 +43,7 @@ function StarRating({ rating, size = 'sm', interactive, onClick, currentFilter }
     return (
       <div className="flex items-center gap-0.5">
         {stars.map((star) => (
-          <button key={star} type="button" onClick={() => onClick(star === currentFilter ? 0 : star)} className={`${size === 'lg' ? 'text-xl' : 'text-sm'} transition ${star <= currentFilter ? 'text-gold' : 'text-gray-300'} hover:text-gold focus:outline-none`} title={`${star}+ stars`}>★</button>
+          <button key={star} type="button" onClick={() => onClick(star === currentFilter ? 0 : star)} className={`${size === 'lg' ? 'text-xl' : 'text-sm'} transition ${star <= currentFilter ? 'text-amber-600' : 'text-gray-300'} hover:text-amber-700 focus:outline-none`} title={`${star}+ stars`}>★</button>
         ))}
         {currentFilter > 0 && <span className="text-xs text-gray-500 ml-1">& up</span>}
       </div>
@@ -52,7 +52,7 @@ function StarRating({ rating, size = 'sm', interactive, onClick, currentFilter }
   return (
     <div className="flex items-center gap-0.5">
       {stars.map((star) => (
-        <span key={star} className={`${size === 'lg' ? 'text-xl' : 'text-sm'} ${star <= Math.round(rating) ? 'text-gold' : 'text-gray-300'}`}>★</span>
+        <span key={star} className={`${size === 'lg' ? 'text-xl' : 'text-sm'} ${star <= Math.round(rating) ? 'text-amber-600' : 'text-gray-300'}`}>★</span>
       ))}
     </div>
   )
@@ -64,7 +64,8 @@ function flattenCategories(data) {
   data.forEach((item) => {
     if (typeof item === 'string') { result.push(item) }
     else if (item && typeof item === 'object') {
-      if (item.name) result.push(item.name)
+      if (Array.isArray(item.subjects)) result.push(...item.subjects)
+      else if (item.name) result.push(item.name)
       if (Array.isArray(item.subcategories)) {
         item.subcategories.forEach((sub) => {
           if (typeof sub === 'string') result.push(sub)
@@ -113,18 +114,18 @@ function TutorCard({ tutor, isFavorited, onToggleFavorite, user }) {
   const subjects = tutor.subjects || []
   const visibleSubjects = subjects.slice(0, 3)
   const extraCount = subjects.length - 3
-  const feeAmount = tutor.fee_per_hour || tutor.expected_fee
+  const feeAmount = tutor.fee_per_hour ?? tutor.expected_fee
   const feeLabel = tutor.fee_type === 'per_hour' ? '/hr' : '/month'
 
   return (
-    <div className="bg-white rounded-xl premium-shadow hover:shadow-xl transition-all duration-300 hover:-translate-y-1 overflow-hidden flex flex-col group">
+    <div className="bg-white rounded-xl premium-shadow hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 overflow-hidden flex flex-col group">
       <div className="p-5 flex-1 flex flex-col">
         <div className="flex items-start gap-4">
           <div className="relative shrink-0">
-            {tutor.photo ? (
-              <img src={tutor.photo} alt="" className="w-12 h-12 rounded-full object-cover ring-2 ring-primary/10" />
+            {(tutor.photo_path || tutor.photo) ? (
+              <img src={tutor.photo || `${(import.meta.env.VITE_API_URL || '').replace(/\/$/, '')}${tutor.photo_path}`} alt={tutor.full_name} className="w-12 h-12 rounded-full object-cover ring-2 ring-primary/10" />
             ) : (
-              <div className="w-12 h-12 bg-gradient-to-br from-primary to-primary-light text-gold rounded-full flex items-center justify-center text-lg font-bold shadow-md">{initial}</div>
+              <div className="w-12 h-12 bg-gradient-to-br from-primary to-primary-light text-gold rounded-full flex items-center justify-center text-lg font-semibold shadow-md">{initial}</div>
             )}
             {tutor.is_verified && (
               <div className="absolute -top-1 -right-1 bg-green-500 text-white rounded-full w-5 h-5 flex items-center justify-center shadow border-2 border-white"><VerifiedIcon /></div>
@@ -132,7 +133,7 @@ function TutorCard({ tutor, isFavorited, onToggleFavorite, user }) {
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-start justify-between gap-2">
-              <h3 className="font-bold text-primary truncate text-sm">{tutor.full_name}</h3>
+              <h3 className="font-semibold text-primary text-base">{tutor.full_name}</h3>
               {user && (
                 <button onClick={() => onToggleFavorite(tutor.id)} className="shrink-0 p-1 rounded-full hover:bg-gray-100 transition" title={isFavorited ? 'Remove' : 'Save'}>
                   <HeartIcon filled={isFavorited} />
@@ -160,7 +161,7 @@ function TutorCard({ tutor, isFavorited, onToggleFavorite, user }) {
         </div>
 
         <div className="mt-2 flex items-center justify-between text-sm">
-          <span className="font-bold text-primary">₹{feeAmount || 'Neg'}{feeAmount ? feeLabel : ''}</span>
+          <span className="font-semibold text-primary">{feeAmount != null ? `₹${feeAmount}${feeLabel}` : 'Fee on request'}</span>
           <span className="text-gray-500 text-xs">{tutor.experience_years || 0} yrs</span>
         </div>
 
@@ -186,7 +187,7 @@ export default function FindTutors() {
   const limit = 12
 
   const [filters, setFilters] = useState({
-    search: '', subject: searchParams.get('subject') || '', board: '', teaching_mode: '', area: '',
+    search: '', subject: searchParams.get('subject') || '', class_level: searchParams.get('class_level') || '', board: '', teaching_mode: searchParams.get('teaching_mode') || '', area: searchParams.get('area') || '',
     min_fee: '', max_fee: '', min_rating: 0, sort: 'rating',
   })
   const [sidebarOpen, setSidebarOpen] = useState(false)
@@ -219,7 +220,7 @@ export default function FindTutors() {
 
   useEffect(() => {
     const subject = searchParams.get('subject') || ''
-    setFilters((prev) => ({ ...prev, subject }))
+    setFilters((prev) => ({ ...prev, subject, class_level: searchParams.get('class_level') || '', teaching_mode: searchParams.get('teaching_mode') || '', area: searchParams.get('area') || '' }))
     setSubjectSearch(subject)
   }, [searchParams])
 
@@ -230,6 +231,7 @@ export default function FindTutors() {
       const params = {}
       if (filters.search) params.search = filters.search
       if (filters.subject) params.subject = filters.subject
+      if (filters.class_level) params.class_level = filters.class_level
       if (filters.board) params.board = filters.board
       if (filters.teaching_mode) params.teaching_mode = filters.teaching_mode
       if (filters.area) params.area = filters.area
@@ -261,7 +263,7 @@ export default function FindTutors() {
     setLoading(true); setLoadingMore(false); setError(''); setSkip(0); setTutors([]); setTotal(0)
     const timer = setTimeout(() => fetchTutors(true), 300)
     return () => { clearTimeout(timer); ++requestId.current }
-  }, [filters.search, filters.subject, filters.board, filters.teaching_mode, filters.area, filters.min_fee, filters.max_fee, filters.min_rating, filters.sort, filters.experience])
+  }, [filters.search, filters.subject, filters.class_level, filters.board, filters.teaching_mode, filters.area, filters.min_fee, filters.max_fee, filters.min_rating, filters.sort, filters.experience])
 
   useEffect(() => {
     if (tutors.length > 0 && user) {
@@ -276,7 +278,7 @@ export default function FindTutors() {
 
   const loadMore = () => { if (loadingMore) return; setLoadingMore(true); fetchTutors(false) }
   const clearFilters = () => {
-    setFilters({ search: '', subject: '', board: '', teaching_mode: '', area: '', min_fee: '', max_fee: '', min_rating: 0, sort: 'rating', experience: '' })
+    setFilters({ search: '', subject: '', class_level: '', board: '', teaching_mode: '', area: '', min_fee: '', max_fee: '', min_rating: 0, sort: 'rating', experience: '' })
     setSubjectSearch('')
   }
   const updateFilter = (key, value) => { setFilters((prev) => ({ ...prev, [key]: value })); setSidebarOpen(false) }
@@ -291,8 +293,8 @@ export default function FindTutors() {
 
   const hasMore = tutors.length < total
   const verifiedCount = tutors.filter((t) => t.is_verified).length
-  const tutorsWithFee = tutors.filter((t) => t.fee_per_hour || t.expected_fee)
-  const avgFee = tutorsWithFee.length ? Math.round(tutorsWithFee.reduce((s, t) => s + (t.fee_per_hour || t.expected_fee || 0), 0) / tutorsWithFee.length) : 0
+  const tutorsWithFee = tutors.filter((t) => (t.fee_per_hour ?? t.expected_fee) != null)
+  const avgFee = tutorsWithFee.length ? Math.round(tutorsWithFee.reduce((s, t) => s + (t.fee_per_hour ?? t.expected_fee ?? 0), 0) / tutorsWithFee.length) : 0
   const avgRating = tutors.length ? (tutors.reduce((s, t) => s + (t.rating || 0), 0) / tutors.length).toFixed(1) : '0.0'
 
   const languages = [
@@ -318,16 +320,10 @@ const sortOptions = [
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 md:py-8 animate-fade-in">
       <div className="mb-6">
         <div className="flex items-center gap-2 mb-2">
-          <h1 className="text-2xl md:text-4xl font-extrabold text-primary">Find the Perfect Tutor</h1>
+          <h1 className="text-2xl md:text-4xl font-semibold text-primary">Find your kind of teacher.</h1>
         </div>
-        <p className="text-gray-500 text-sm md:text-base">Browse through our verified tutors</p>
-        <div className="flex flex-wrap items-center gap-2 mt-3">
-          <span className="text-xs text-gray-400 font-medium">Search in:</span>
-          {languages.slice(0, 4).map((lang) => (
-            <span key={lang} className="text-xs bg-gray-100 text-gray-600 px-2.5 py-1 rounded-full border border-gray-200">{lang}</span>
-          ))}
-          <span className="text-xs text-gray-400">+{languages.length - 4} more</span>
-        </div>
+        <p className="text-gray-500 text-sm md:text-base">Compare subjects, experience and fees. Choose the teacher who fits your learning.</p>
+        <div className="discovery-breadcrumb"><Link to="/">Home</Link><span>/</span><span>Find a teacher</span></div>
       </div>
 
       <button onClick={() => setSidebarOpen(!sidebarOpen)} className="lg:hidden flex items-center gap-2 bg-gradient-to-r from-primary to-primary-light text-white px-4 py-2.5 rounded-xl text-sm font-semibold mb-4 hover:shadow-lg transition">
@@ -339,18 +335,18 @@ const sortOptions = [
         <aside className={`${sidebarOpen ? 'block' : 'hidden'} lg:block w-full lg:w-72 shrink-0`}>
           <div className="lg:sticky lg:top-24 space-y-5 bg-white lg:bg-gray-50/50 p-4 lg:p-5 rounded-xl lg:rounded-2xl premium-shadow">
             <div className="flex items-center justify-between lg:hidden">
-              <h2 className="font-bold text-primary text-lg">Filters</h2>
+              <h2 className="font-semibold text-primary text-lg">Filters</h2>
               <button onClick={() => setSidebarOpen(false)} className="text-gray-400 hover:text-gray-600 text-xl leading-none">&times;</button>
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Search</label>
-              <input type="text" value={filters.search} onChange={(e) => updateFilter('search', e.target.value)} placeholder="Name or keyword..." className="input-field text-sm py-2.5" />
+              <label htmlFor="findtutors-field-0" className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Search</label>
+              <input id="findtutors-field-0" type="text" value={filters.search} onChange={(e) => updateFilter('search', e.target.value)} placeholder="Name or keyword..." className="input-field text-sm py-2.5" />
             </div>
 
             <div ref={subjectRef} className="relative">
-              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Subject</label>
-              <input type="text" value={filters.subject || subjectSearch} onChange={(e) => { setSubjectSearch(e.target.value); if (filters.subject) updateFilter('subject', ''); setShowSubjectDropdown(true) }} onFocus={() => setShowSubjectDropdown(true)} placeholder="All subjects" className="input-field text-sm py-2.5" />
+              <label htmlFor="findtutors-field-1" className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Subject</label>
+              <input id="findtutors-field-1" type="text" value={filters.subject || subjectSearch} onChange={(e) => { setSubjectSearch(e.target.value); if (filters.subject) updateFilter('subject', ''); setShowSubjectDropdown(true) }} onFocus={() => setShowSubjectDropdown(true)} placeholder="All subjects" className="input-field text-sm py-2.5" />
               {filters.subject && (
                 <button onClick={() => { updateFilter('subject', ''); setSubjectSearch('') }} className="absolute right-2.5 top-[34px] text-gray-400 hover:text-gray-600">&times;</button>
               )}
@@ -367,8 +363,16 @@ const sortOptions = [
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Board</label>
-              <select value={filters.board} onChange={(e) => updateFilter('board', e.target.value)} className="input-field text-sm py-2.5 cursor-pointer">
+              <label htmlFor="tutor-class-filter" className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Class / level</label>
+              <select id="tutor-class-filter" value={filters.class_level || ''} onChange={(e) => updateFilter('class_level', e.target.value)} className="input-field text-sm py-2.5">
+                <option value="">All classes</option>
+                {['Nursery','LKG','UKG','1','2','3','4','5','6','7','8','9','10','11','12','JEE','NEET'].map(c => <option key={c} value={c}>{/^\d+$/.test(c) ? `Class ${c}` : c}</option>)}
+              </select>
+            </div>
+
+            <div>
+              <label htmlFor="findtutors-field-2" className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Board</label>
+              <select id="findtutors-field-2" value={filters.board} onChange={(e) => updateFilter('board', e.target.value)} className="input-field text-sm py-2.5 cursor-pointer">
                 <option value="">All Boards</option>
                 <option value="JAC">JAC</option>
                 <option value="CBSE">CBSE</option>
@@ -377,8 +381,8 @@ const sortOptions = [
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Teaching Mode</label>
-              <select value={filters.teaching_mode} onChange={(e) => updateFilter('teaching_mode', e.target.value)} className="input-field text-sm py-2.5 cursor-pointer">
+              <label htmlFor="findtutors-field-3" className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Teaching Mode</label>
+              <select id="findtutors-field-3" value={filters.teaching_mode} onChange={(e) => updateFilter('teaching_mode', e.target.value)} className="input-field text-sm py-2.5 cursor-pointer">
                 <option value="">All Modes</option>
                 <option value="home">Home</option>
                 <option value="online">Online</option>
@@ -387,22 +391,22 @@ const sortOptions = [
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Location</label>
-              <input type="text" value={filters.area} onChange={(e) => updateFilter('area', e.target.value)} placeholder="e.g. Ranchi, Doranda" className="input-field text-sm py-2.5" />
+              <label htmlFor="findtutors-field-4" className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Location</label>
+              <input id="findtutors-field-4" type="text" value={filters.area} onChange={(e) => updateFilter('area', e.target.value)} placeholder="e.g. Ranchi, Doranda" className="input-field text-sm py-2.5" />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Fee Range (₹)</label>
+              <label htmlFor="findtutors-field-5" className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Fee Range (₹)</label>
               <div className="flex items-center gap-2">
-                <input type="number" min="0" value={filters.min_fee} onChange={(e) => updateFilter('min_fee', e.target.value)} placeholder="Min" className="input-field text-sm py-2.5" />
+                <input id="findtutors-field-5" type="number" min="0" value={filters.min_fee} onChange={(e) => updateFilter('min_fee', e.target.value)} placeholder="Min" className="input-field text-sm py-2.5" />
                 <span className="text-gray-300">-</span>
-                <input type="number" min="0" value={filters.max_fee} onChange={(e) => updateFilter('max_fee', e.target.value)} placeholder="Max" className="input-field text-sm py-2.5" />
+                <input type="number" min="0" value={filters.max_fee} onChange={(e) => updateFilter('max_fee', e.target.value)} aria-label="Maximum monthly fee" placeholder="Max" className="input-field text-sm py-2.5" />
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Experience (Years)</label>
-              <select value={filters.experience || ''} onChange={(e) => setFilters((prev) => ({ ...prev, experience: e.target.value }))} className="input-field text-sm py-2.5 cursor-pointer">
+              <label htmlFor="findtutors-field-6" className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Experience (Years)</label>
+              <select id="findtutors-field-6" value={filters.experience || ''} onChange={(e) => setFilters((prev) => ({ ...prev, experience: e.target.value }))} className="input-field text-sm py-2.5 cursor-pointer">
                 <option value="">Any Experience</option>
                 <option value="1">1+ year</option>
                 <option value="3">3+ years</option>
@@ -417,8 +421,8 @@ const sortOptions = [
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Sort By</label>
-              <select value={filters.sort} onChange={(e) => updateFilter('sort', e.target.value)} className="input-field text-sm py-2.5 cursor-pointer">
+              <label htmlFor="findtutors-field-8" className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Sort By</label>
+              <select id="findtutors-field-8" value={filters.sort} onChange={(e) => updateFilter('sort', e.target.value)} className="input-field text-sm py-2.5 cursor-pointer">
                 {sortOptions.map((opt) => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
               </select>
             </div>
@@ -431,7 +435,7 @@ const sortOptions = [
           {!loading && tutors.length > 0 && (
             <>
               <div className="flex items-center gap-3 flex-wrap mb-5 text-sm text-gray-600 bg-white premium-shadow rounded-2xl px-5 py-3">
-                <span className="font-bold text-primary">{total} tutor{total !== 1 ? 's' : ''}</span>
+                <span className="font-semibold text-primary">{total} tutor{total !== 1 ? 's' : ''}</span>
                 <span className="w-px h-4 bg-gray-200" />
                 <span className="flex items-center gap-1"><VerifiedIcon /> {verifiedCount} verified</span>
                 <span className="w-px h-4 bg-gray-200 hidden sm:block" />
@@ -445,26 +449,26 @@ const sortOptions = [
           {!loading && tutors.length > 0 && (
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
               <div className="bg-white rounded-xl border border-gray-100 px-4 py-3 text-center">
-                <div className="text-primary font-extrabold text-lg">{total}</div>
+                <div className="text-primary font-semibold text-lg">{total}</div>
                 <div className="text-gray-500 text-xs font-medium">Total Tutors</div>
               </div>
               <div className="bg-white rounded-xl border border-gray-100 px-4 py-3 text-center">
-                <div className="text-green-600 font-extrabold text-lg">{verifiedCount}</div>
+                <div className="text-green-600 font-semibold text-lg">{verifiedCount}</div>
                 <div className="text-gray-500 text-xs font-medium">Verified</div>
               </div>
               <div className="bg-white rounded-xl border border-gray-100 px-4 py-3 text-center">
-                <div className="text-primary font-extrabold text-lg">₹{avgFee}</div>
+                <div className="text-primary font-semibold text-lg">₹{avgFee}</div>
                 <div className="text-gray-500 text-xs font-medium">Avg Fee/mo</div>
               </div>
               <div className="bg-white rounded-xl border border-gray-100 px-4 py-3 text-center">
-                <div className="text-gold-dark font-extrabold text-lg">{avgRating}</div>
+                <div className="text-gold-dark font-semibold text-lg">{avgRating}</div>
                 <div className="text-gray-500 text-xs font-medium">Avg Rating</div>
               </div>
             </div>
           )}
 
           {loading && tutors.length === 0 && (
-            <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
               {Array.from({ length: 8 }).map((_, i) => <SkeletonCard key={i} />)}
             </div>
           )}
@@ -491,7 +495,7 @@ const sortOptions = [
 
           {tutors.length > 0 && (
             <>
-              <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
                 {tutors.map((tutor) => (
                   <TutorCard key={tutor.id} tutor={tutor} isFavorited={!!favorites[tutor.id]} onToggleFavorite={toggleFavorite} user={user} />
                 ))}
@@ -507,29 +511,7 @@ const sortOptions = [
                 </div>
               )}
 
-              {/* Blog sidebar */}
-              <div className="mt-10 bg-white rounded-2xl premium-shadow border border-gray-100 p-6">
-                <div className="flex items-center justify-between mb-5">
-                  <h3 className="font-bold text-primary text-lg">Today's Blogs</h3>
-                  <a href="#" className="text-sm text-primary font-medium hover:underline">Show more →</a>
-                </div>
-                <div className="space-y-4">
-                  {blogs.map((blog, idx) => (
-                    <div key={idx} className="flex items-start gap-3 group cursor-pointer">
-                      <div className="w-10 h-10 rounded-xl bg-primary/5 text-primary flex items-center justify-center text-sm font-bold shrink-0 group-hover:bg-primary group-hover:text-white transition-colors">
-                        {blog.title.charAt(0)}
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium text-gray-800 group-hover:text-primary transition-colors line-clamp-2">{blog.title}</p>
-                        <div className="flex items-center gap-2 mt-1">
-                          <span className="text-xs bg-primary/5 text-primary px-2 py-0.5 rounded-full font-medium">{blog.tag}</span>
-                          <span className="text-xs text-gray-400">{blog.date}</span>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
+              <div className="discovery-help"><div><h3>Finding a teacher is a personal decision.</h3><p>Explore profiles, ask questions and discuss availability before you choose.</p></div><Link to="/support">A little guidance →</Link></div>
             </>
           )}
         </div>

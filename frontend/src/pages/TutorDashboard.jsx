@@ -1,18 +1,27 @@
 import { useState, useEffect } from 'react'
 import API from '../api/axios'
+import TutorAvatar from '../components/ui/TutorAvatar'
+import { apiErrorMessage } from '../api/errors'
 
 export default function TutorDashboard() {
   const [profile, setProfile] = useState(null)
   const [applications, setApplications] = useState([])
   const [requirements, setRequirements] = useState([])
   const [form, setForm] = useState({ full_name: '', qualification: '', subjects: [], classes_handled: [], board: 'JAC', teaching_mode: 'home', area_in_ranchi: '', expected_fee: '', experience_years: 0, bio: '' })
+  const [formError, setFormError] = useState('')
   const [subjectInput, setSubjectInput] = useState('')
   const [classInput, setClassInput] = useState('')
+  const [applyingIds, setApplyingIds] = useState(() => new Set())
+  const [applicationNotice, setApplicationNotice] = useState('')
 
   useEffect(() => {
     fetchProfile()
     fetchApplications()
     fetchOpenRequirements()
+    const refresh = () => { if (document.visibilityState === 'visible') { fetchApplications(); fetchOpenRequirements() } }
+    const timer = setInterval(refresh, 15000)
+    window.addEventListener('focus', refresh)
+    return () => { clearInterval(timer); window.removeEventListener('focus', refresh) }
   }, [])
 
   const fetchProfile = async () => {
@@ -27,7 +36,7 @@ export default function TutorDashboard() {
         board: res.data.board || 'JAC',
         teaching_mode: res.data.teaching_mode || 'home',
         area_in_ranchi: res.data.area_in_ranchi || '',
-        expected_fee: res.data.expected_fee || '',
+        expected_fee: res.data.expected_fee ?? '',
         experience_years: res.data.experience_years || 0,
         bio: res.data.bio || '',
       })
@@ -68,22 +77,32 @@ export default function TutorDashboard() {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+    setFormError('')
+    if (!form.subjects.length || !form.classes_handled.length) {
+      setFormError('Add at least one subject and one class before saving your profile.')
+      return
+    }
     try {
       const res = await API.put('/tutors/profile', { ...form, expected_fee: form.expected_fee ? parseFloat(form.expected_fee) : null, experience_years: parseInt(form.experience_years) || 0 })
       setProfile(res.data)
       alert('Profile updated!')
-    } catch (err) { alert(err.response?.data?.detail || 'Failed to update profile') }
+    } catch (err) { setFormError(apiErrorMessage(err, 'Failed to update profile')) }
   }
 
   const handleApply = async (reqId) => {
+    if (applyingIds.has(reqId) || applications.some(application => application.requirement_id === reqId)) return
+    setApplyingIds(current => new Set(current).add(reqId))
+    setApplicationNotice('')
     try {
-      await API.post(`/apply/${reqId}`, { cover_note: 'I am interested in this requirement.' })
-      alert('Applied successfully!')
-      fetchApplications()
-    } catch (err) { alert(err.response?.data?.detail || 'Failed to apply') }
+      const { data } = await API.post(`/apply/${reqId}`, { cover_note: 'I am interested in this requirement.' })
+      setApplications(current => [data, ...current.filter(application => application.id !== data.id)])
+      setApplicationNotice('Application submitted. Its status is now pending parent review.')
+    } catch (err) { setApplicationNotice(apiErrorMessage(err, 'Failed to apply')) }
+    finally { setApplyingIds(current => { const next = new Set(current); next.delete(reqId); return next }) }
   }
 
   const handlePhotoUpload = async (e) => {
+    if (!e.target.files?.[0]) return
     const fd = new FormData()
     fd.append('file', e.target.files[0])
     try {
@@ -95,12 +114,12 @@ export default function TutorDashboard() {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 animate-fade-in">
       <div className="mb-8">
-        <h1 className="text-3xl font-extrabold text-primary">Tutor Dashboard</h1>
+        <h1 className="text-3xl font-semibold text-primary">Tutor Dashboard</h1>
         <p className="text-gray-500 text-sm mt-1">Manage your profile and find opportunities</p>
       </div>
 
-      <div className="grid lg:grid-cols-2 gap-8">
-        <div className="space-y-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 [&>*]:min-w-0">
+        <div className="space-y-6 min-w-0">
           <div className="bg-white premium-shadow rounded-2xl p-6 md:p-8 border border-gray-100">
             <div className="flex items-center gap-3 mb-6">
               <div className="w-10 h-10 bg-gradient-to-br from-primary to-primary-light rounded-xl flex items-center justify-center">
@@ -108,7 +127,7 @@ export default function TutorDashboard() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                 </svg>
               </div>
-              <h2 className="text-xl font-bold text-primary">{profile ? 'Update Your Profile' : 'Complete Your Profile'}</h2>
+              <h2 className="text-xl font-semibold text-primary">{profile ? 'Update Your Profile' : 'Complete Your Profile'}</h2>
             </div>
             {!profile?.is_approved && profile && (
               <div className="bg-amber-50 border border-amber-200 text-amber-700 p-3 rounded-xl mb-5 text-sm flex items-center gap-2">
@@ -119,42 +138,43 @@ export default function TutorDashboard() {
               </div>
             )}
             <form onSubmit={handleSubmit} className="space-y-4">
-              <input value={form.full_name} onChange={(e) => setForm({ ...form, full_name: e.target.value })} placeholder="Full Name" required className="input-field" />
-              <input value={form.qualification} onChange={(e) => setForm({ ...form, qualification: e.target.value })} placeholder="Qualification (e.g. B.Sc, B.Ed)" required className="input-field" />
+              {formError && <p role="alert" className="text-sm text-red-600">{formError}</p>}
+              <input value={form.full_name} onChange={(e) => setForm({ ...form, full_name: e.target.value })} aria-label="Full Name" placeholder="Full Name" required className="min-w-0 input-field" />
+              <input value={form.qualification} onChange={(e) => setForm({ ...form, qualification: e.target.value })} aria-label="Qualification (e.g. B.Sc, B.Ed)" placeholder="Qualification (e.g. B.Sc, B.Ed)" required className="min-w-0 input-field" />
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">Subjects</label>
+                <label htmlFor="tutordashboard-field-0" className="block text-sm font-medium text-gray-700 mb-1.5">Subjects</label>
                 <div className="flex gap-2 mb-2 flex-wrap">
-                  {form.subjects.map((s) => <span key={s} className="bg-gradient-to-r from-primary to-primary-light text-white px-3 py-1.5 rounded-full text-sm flex items-center gap-1.5 shadow-sm">{s} <button type="button" onClick={() => removeSubject(s)} className="text-gold hover:text-gold-light font-bold">&times;</button></span>)}
+                  {form.subjects.map((s) => <span key={s} className="bg-gradient-to-r from-primary to-primary-light text-white px-3 py-1.5 rounded-full text-sm flex items-center gap-1.5 shadow-sm">{s} <button type="button" onClick={() => removeSubject(s)} className="text-gold hover:text-gold-light font-semibold">&times;</button></span>)}
                 </div>
-                <div className="flex gap-2">
-                  <input value={subjectInput} onChange={(e) => setSubjectInput(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addSubject())} placeholder="Add subject" className="input-field flex-1" />
+                <div className="flex gap-2 min-w-0">
+                  <input id="tutordashboard-field-0" value={subjectInput} onChange={(e) => setSubjectInput(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addSubject())} placeholder="Add subject" className="min-w-0 input-field flex-1" />
                   <button type="button" onClick={addSubject} className="btn-primary whitespace-nowrap px-4 text-sm">Add</button>
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">Classes Handled</label>
+                <label htmlFor="tutordashboard-field-1" className="block text-sm font-medium text-gray-700 mb-1.5">Classes Handled</label>
                 <div className="flex gap-2 mb-2 flex-wrap">
-                  {form.classes_handled.map((c) => <span key={c} className="bg-gradient-to-r from-primary to-primary-light text-white px-3 py-1.5 rounded-full text-sm flex items-center gap-1.5 shadow-sm">{c} <button type="button" onClick={() => removeClass(c)} className="text-gold hover:text-gold-light font-bold">&times;</button></span>)}
+                  {form.classes_handled.map((c) => <span key={c} className="bg-gradient-to-r from-primary to-primary-light text-white px-3 py-1.5 rounded-full text-sm flex items-center gap-1.5 shadow-sm">{c} <button type="button" onClick={() => removeClass(c)} className="text-gold hover:text-gold-light font-semibold">&times;</button></span>)}
                 </div>
-                <div className="flex gap-2">
-                  <input value={classInput} onChange={(e) => setClassInput(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addClass())} placeholder="Add class (e.g. 10, Nursery, NEET)" className="input-field flex-1" />
+                <div className="flex gap-2 min-w-0">
+                  <input id="tutordashboard-field-1" value={classInput} onChange={(e) => setClassInput(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addClass())} placeholder="Add class (e.g. 10, Nursery, NEET)" className="min-w-0 input-field flex-1" />
                   <button type="button" onClick={addClass} className="btn-primary whitespace-nowrap px-4 text-sm">Add</button>
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <select value={form.board} onChange={(e) => setForm({ ...form, board: e.target.value })} className="input-field cursor-pointer">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <select aria-label="Board" value={form.board} onChange={(e) => setForm({ ...form, board: e.target.value })} className="min-w-0 input-field cursor-pointer">
                   <option value="JAC">JAC</option><option value="CBSE">CBSE</option><option value="ICSE">ICSE</option>
                 </select>
-                <select value={form.teaching_mode} onChange={(e) => setForm({ ...form, teaching_mode: e.target.value })} className="input-field cursor-pointer">
+                <select aria-label="Teaching mode" value={form.teaching_mode} onChange={(e) => setForm({ ...form, teaching_mode: e.target.value })} className="min-w-0 input-field cursor-pointer">
                   <option value="home">Home Tuition</option><option value="online">Online</option><option value="both">Both</option>
                 </select>
               </div>
-              <input value={form.area_in_ranchi} onChange={(e) => setForm({ ...form, area_in_ranchi: e.target.value })} placeholder="Area in Ranchi" className="input-field" />
-              <div className="grid grid-cols-2 gap-4">
-                <input type="number" value={form.expected_fee} onChange={(e) => setForm({ ...form, expected_fee: e.target.value })} placeholder="Expected fee (₹/month)" className="input-field" />
-                <input type="number" value={form.experience_years} onChange={(e) => setForm({ ...form, experience_years: e.target.value })} placeholder="Years of experience" className="input-field" />
+              <input value={form.area_in_ranchi} onChange={(e) => setForm({ ...form, area_in_ranchi: e.target.value })} aria-label="Area in Ranchi" placeholder="Area in Ranchi" className="min-w-0 input-field" />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <input type="number" min="0" step="any" value={form.expected_fee} onChange={(e) => setForm({ ...form, expected_fee: e.target.value })} aria-label="Expected fee (₹/month)" placeholder="Expected fee (₹/month)" className="min-w-0 input-field" />
+                <input type="number" min="0" step="1" value={form.experience_years} onChange={(e) => setForm({ ...form, experience_years: e.target.value })} aria-label="Years of experience" placeholder="Years of experience" className="min-w-0 input-field" />
               </div>
-              <textarea value={form.bio} onChange={(e) => setForm({ ...form, bio: e.target.value })} placeholder="Short bio about yourself..." className="input-field" rows={3} />
+              <textarea value={form.bio} onChange={(e) => setForm({ ...form, bio: e.target.value })} aria-label="Short bio about yourself..." placeholder="Short bio about yourself..." className="min-w-0 input-field" rows={3} />
               <button type="submit" className="btn-primary w-full inline-flex items-center justify-center gap-2">
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
@@ -164,12 +184,10 @@ export default function TutorDashboard() {
             </form>
             {profile && (
               <div className="mt-5 pt-5 border-t border-gray-100">
-                <label className="block text-sm font-medium text-gray-700 mb-2">Profile Photo</label>
+                <label htmlFor="tutordashboard-field-2" className="block text-sm font-medium text-gray-700 mb-2">Profile Photo</label>
                 <div className="flex items-center gap-4">
-                  <div className="w-16 h-16 bg-gradient-to-br from-primary to-primary-light text-gold rounded-full flex items-center justify-center text-2xl font-bold shadow-md">
-                    {(profile.full_name?.[0] || 'T')}
-                  </div>
-                  <input type="file" accept="image/*" onChange={handlePhotoUpload} className="text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20 transition cursor-pointer" />
+                  <TutorAvatar tutor={profile} className="w-16 h-16 text-2xl font-semibold" />
+                  <input id="tutordashboard-field-2" type="file" accept="image/*" onChange={handlePhotoUpload} className="min-w-0 w-full text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20 transition cursor-pointer" />
                 </div>
               </div>
             )}
@@ -183,7 +201,7 @@ export default function TutorDashboard() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                 </div>
-                <h2 className="text-xl font-bold text-primary">My Applications ({applications.length})</h2>
+                <h2 className="text-xl font-semibold text-primary">My Applications ({applications.length})</h2>
               </div>
             </div>
             {applications.length === 0 ? (
@@ -209,28 +227,34 @@ export default function TutorDashboard() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                 </svg>
               </div>
-              <h2 className="text-xl font-bold text-primary">Open Requirements</h2>
+              <h2 className="text-xl font-semibold text-primary">Open Requirements</h2>
             </div>
+            {applicationNotice && <p role="status" className="mb-4 p-3 rounded-xl bg-blue-50 border border-blue-200 text-blue-700 text-sm">{applicationNotice}</p>}
             {requirements.length === 0 ? (
               <p className="text-gray-500 text-center py-8">No open requirements available.</p>
             ) : (
               <div className="space-y-3">
-                {requirements.map((req) => (
-                  <div key={req.id} className="p-4 border border-gray-100 rounded-xl premium-shadow-hover transition bg-white hover:bg-gray-50/50">
-                    <div className="flex justify-between items-start gap-3">
-                      <div className="flex-1 min-w-0">
-                        <h3 className="font-bold text-primary text-sm">{isNaN(req.child_class) ? req.child_class : `Class ${req.child_class}`}</h3>
-                        <div className="flex flex-wrap gap-1 mt-1">
-                          {req.subjects_needed.map((s) => (
-                            <span key={s} className="bg-primary/10 text-primary px-2 py-0.5 rounded text-xs font-medium">{s}</span>
-                          ))}
+                {requirements.map((req) => {
+                  const application = applications.find(item => item.requirement_id === req.id)
+                  const applying = applyingIds.has(req.id)
+                  const label = applying ? 'Applying…' : application ? (application.status === 'pending' ? 'Applied · Pending' : application.status === 'accepted' ? 'Accepted' : 'Rejected') : 'Apply'
+                  return (
+                    <div key={req.id} className="p-4 border border-gray-100 rounded-xl premium-shadow-hover transition bg-white hover:bg-gray-50/50">
+                      <div className="flex flex-col sm:flex-row justify-between items-start gap-3">
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-semibold text-primary text-sm">{isNaN(req.child_class) ? req.child_class : `Class ${req.child_class}`}</h3>
+                          <div className="flex flex-wrap gap-1 mt-1">
+                            {req.subjects_needed.map((s) => (
+                              <span key={s} className="bg-primary/10 text-primary px-2 py-0.5 rounded text-xs font-medium">{s}</span>
+                            ))}
+                          </div>
+                          <p className="text-xs text-gray-500 mt-1.5">{req.board} | {req.teaching_mode} | {req.location_area || 'Any'} | <span className="font-semibold text-primary">₹{req.budget_per_month ?? 'Neg'}/mo</span></p>
                         </div>
-                        <p className="text-xs text-gray-500 mt-1.5">{req.board} | {req.teaching_mode} | {req.location_area || 'Any'} | <span className="font-semibold text-primary">₹{req.budget_per_month || 'Neg'}/mo</span></p>
+                        <button onClick={() => handleApply(req.id)} disabled={applying || Boolean(application)} className={`text-xs px-4 py-2.5 whitespace-nowrap shrink-0 rounded-xl font-semibold w-full sm:w-auto ${application?.status === 'accepted' ? 'bg-green-50 text-green-700 border border-green-200' : application?.status === 'rejected' ? 'bg-red-50 text-red-700 border border-red-200' : application ? 'bg-amber-50 text-amber-700 border border-amber-200' : 'btn-gold'} disabled:cursor-not-allowed`}>{label}</button>
                       </div>
-                      <button onClick={() => handleApply(req.id)} className="btn-gold text-xs px-4 py-2 whitespace-nowrap shrink-0">Apply</button>
                     </div>
-                  </div>
-                ))}
+                  )
+                })}
               </div>
             )}
           </div>

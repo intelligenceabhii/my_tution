@@ -1,3 +1,4 @@
+import AuthIntro from '../components/ui/AuthIntro'
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
@@ -22,17 +23,18 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-[90vh] flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-blue-50 relative overflow-hidden px-4 py-8">
+    <div className="min-h-[90vh] flex items-center justify-center bg-surface relative overflow-hidden px-4 py-8">
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute -top-20 -left-20 w-[400px] h-[400px] bg-gradient-to-br from-primary/[0.03] to-transparent rounded-full blur-3xl" />
         <div className="absolute -bottom-20 -right-20 w-[400px] h-[400px] bg-gradient-to-tl from-gold/[0.03] to-transparent rounded-full blur-3xl" />
       </div>
+      <AuthIntro register={false} />
       <div className="relative w-full max-w-md animate-slide-up">
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-primary to-primary-light rounded-2xl shadow-lg mb-4">
-            <span className="text-gold text-3xl font-extrabold">M</span>
+            <span className="text-gold text-3xl font-semibold">M</span>
           </div>
-          <h2 className="text-3xl font-extrabold text-primary">Welcome Back</h2>
+          <h2 className="text-3xl font-semibold text-primary">Welcome Back</h2>
           <p className="text-gray-500 mt-2">Sign in to continue to MY Tuition</p>
         </div>
 
@@ -47,24 +49,24 @@ export default function Login() {
           )}
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">Email Address</label>
+              <label htmlFor="login-field-0" className="block text-sm font-medium text-gray-700 mb-1.5">Email Address</label>
               <div className="relative">
                 <svg className="w-5 h-5 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207" />
                 </svg>
-                <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required className="w-full pl-11 pr-4 py-3.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition bg-gray-50/50" placeholder="your@email.com" />
+                <input id="login-field-0" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required className="w-full pl-11 pr-4 py-3.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition bg-gray-50/50" placeholder="your@email.com" />
               </div>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">Password</label>
+              <label htmlFor="login-field-1" className="block text-sm font-medium text-gray-700 mb-1.5">Password</label>
               <div className="relative">
                 <svg className="w-5 h-5 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                 </svg>
-                <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required className="w-full pl-11 pr-4 py-3.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition bg-gray-50/50" placeholder="••••••••" />
+                <input id="login-field-1" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required className="w-full pl-11 pr-4 py-3.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition bg-gray-50/50" placeholder="••••••••" />
               </div>
             </div>
-            <button type="submit" className="w-full bg-gradient-to-r from-primary to-primary-light text-white py-3.5 rounded-xl font-bold hover:shadow-lg hover:scale-[1.01] transition-all active:scale-[0.99]">Sign In</button>
+            <button type="submit" className="w-full bg-gradient-to-r from-primary to-primary-light text-white py-3.5 rounded-xl font-semibold hover:shadow-lg hover:scale-[1.01] transition-all active:scale-[0.99]">Sign In</button>
           </form>
         </div>
 
